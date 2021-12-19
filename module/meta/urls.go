@@ -12,5 +12,5 @@ func init() {
 
 func InitModule(router *gin.Engine) {
 	group := router.Group("/api/meta")
-	group.POST("/getfileinfo", module.JsonWrap(GetFileInfo, &GetFileInfoRequest{}))
+	group.GET("/getfileinfo", module.URLWrap(GetFileInfo, &GetFileInfoRequest{}))
 }

@@ -1,7 +1,7 @@
 package meta
 
 type GetFileInfoRequest struct {
-	FileId string `json:"file_id"`
+	FileId string `schema:"file_id"`
 }
 
 type GetFileInfoResponse struct {

@@ -2,6 +2,7 @@ package module
 
 import (
 	"fmt"
+	"tgblock/module/constants"
 )
 
 type APIError struct {
@@ -45,4 +46,12 @@ func GinErrResponse(code int, errmsg string, detail error) map[string]interface{
 		m["debug_msg"] = detail.Error()
 	}
 	return m
+}
+
+func AsAPIError(err error) *APIError {
+	e, ok := err.(*APIError)
+	if ok {
+		return e
+	}
+	return WrapError(constants.ErrUnknown, "unknow error", err)
 }

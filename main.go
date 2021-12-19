@@ -4,6 +4,7 @@ import (
 	"tgblock/bot"
 	"tgblock/module"
 
+	_ "tgblock/module/download"
 	_ "tgblock/module/meta"
 	_ "tgblock/module/upload"
 
