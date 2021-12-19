@@ -5,17 +5,17 @@ import (
 	"io"
 	"sync"
 	"tgblock/module"
-	"tgblock/processor"
+	"tgblock/protos/gen/tgblock"
 )
 
 type multiBlockReader struct {
-	meta       *processor.FileContext
+	meta       *tgblock.FileContext
 	sctx       *module.ServiceContext
 	reader     io.Reader
 	readerlist []*partReader
 }
 
-func newMultiBlockReader(sctx *module.ServiceContext, meta *processor.FileContext) *multiBlockReader {
+func newMultiBlockReader(sctx *module.ServiceContext, meta *tgblock.FileContext) *multiBlockReader {
 	mr := &multiBlockReader{
 		sctx: sctx,
 		meta: meta,

@@ -1,8 +1,10 @@
 package processor
 
 import (
-	"encoding/json"
 	"io"
+	"tgblock/protos/gen/tgblock"
+
+	"google.golang.org/protobuf/proto"
 )
 
 type CreateFileUploadRequest struct {
@@ -42,29 +44,13 @@ type FinishFileUploadResponse struct {
 	BlockCount int64
 }
 
-type FilePart struct {
-	FileId string
-	Hash   string
-}
-
-type FileContext struct {
-	Name       string      `json:"name"`
-	FileSize   int64       `json:"file_size"`
-	FileHash   string      `json:"file_hash"`
-	BlockCount int64       `json:"block_count"`
-	BlockSize  int64       `json:"block_size"`
-	CreateTime int64       `json:"create_time"`
-	FinishTime int64       `json:"finish_time"`
-	FileList   []*FilePart `json:"file_list"`
-}
-
-func (fc *FileContext) ToBytes() []byte {
-	data, _ := json.Marshal(fc)
+func FileContextToBytes(fc *tgblock.FileContext) []byte {
+	data, _ := proto.Marshal(fc)
 	return data
 }
 
-func (fc *FileContext) FromBytes(data []byte) error {
-	if err := json.Unmarshal(data, fc); err != nil {
+func FileContextFromBytes(fc *tgblock.FileContext, data []byte) error {
+	if err := proto.Unmarshal(data, fc); err != nil {
 		return err
 	}
 	return nil

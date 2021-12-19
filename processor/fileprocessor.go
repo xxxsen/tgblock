@@ -9,6 +9,7 @@ import (
 	"os"
 	"tgblock/bot"
 	"tgblock/locker"
+	"tgblock/protos/gen/tgblock"
 	"time"
 	"unicode"
 
@@ -38,7 +39,7 @@ func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 		return nil, fmt.Errorf("invalid params")
 	}
 	fileid := uuid.NewString()
-	fctx := &FileContext{
+	fctx := &tgblock.FileContext{
 		Name:       req.Name,
 		FileSize:   req.FileSize,
 		FileHash:   req.HASH,
@@ -94,7 +95,7 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	if len(hash) != 0 && sum != hash {
 		return nil, fmt.Errorf("checksum not match, should be:%s, get:%s", sum, hash)
 	}
-	fc.FileList = append(fc.FileList, &FilePart{
+	fc.FileList = append(fc.FileList, &tgblock.FilePart{
 		FileId: fileid,
 		Hash:   sum,
 	})
@@ -133,7 +134,7 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 	if err := p.checkFileContextValid(fc); err != nil {
 		return nil, fmt.Errorf("check file ctx fail, err:%v", err)
 	}
-	data := fc.ToBytes()
+	data := FileContextToBytes(fc)
 	fileid, err := p.tgbot.Upload(ctx, int64(len(data)), bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("finish upload fail, err:%v", err)
@@ -150,7 +151,7 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 	}, nil
 }
 
-func (p *FileProcessor) checkFileContextValid(fc *FileContext) error {
+func (p *FileProcessor) checkFileContextValid(fc *tgblock.FileContext) error {
 	total := len(fc.FileList)
 	left := (total - 1) * int(fc.BlockSize)
 	right := total * int(fc.BlockSize)
@@ -175,23 +176,23 @@ func (p *FileProcessor) isUploadIdValid(file string) bool {
 	return true
 }
 
-func (p *FileProcessor) readFromFile(uploadid string) (*FileContext, error) {
+func (p *FileProcessor) readFromFile(uploadid string) (*tgblock.FileContext, error) {
 	file := p.buildSavePath(uploadid)
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
-	fc := &FileContext{}
-	if err := fc.FromBytes(data); err != nil {
+	fc := &tgblock.FileContext{}
+	if err := FileContextFromBytes(fc, data); err != nil {
 		return nil, err
 	}
 	return fc, nil
 }
 
-func (p *FileProcessor) writeToFile(uploadid string, fc *FileContext) error {
+func (p *FileProcessor) writeToFile(uploadid string, fc *tgblock.FileContext) error {
 	file := p.buildSavePath(uploadid)
 
-	if err := ioutil.WriteFile(file, fc.ToBytes(), 0644); err != nil {
+	if err := ioutil.WriteFile(file, FileContextToBytes(fc), 0644); err != nil {
 		return err
 	}
 	return nil
@@ -206,13 +207,13 @@ func (p *FileProcessor) buildSavePath(uploadid string) string {
 	return tmpSave + uploadid
 }
 
-func (p *FileProcessor) GetFileMeta(ctx context.Context, fileid string) (*FileContext, error) {
+func (p *FileProcessor) GetFileMeta(ctx context.Context, fileid string) (*tgblock.FileContext, error) {
 	data, err := p.GetFileData(ctx, fileid)
 	if err != nil {
 		return nil, err
 	}
-	fc := &FileContext{}
-	if err := fc.FromBytes(data); err != nil {
+	fc := &tgblock.FileContext{}
+	if err := FileContextFromBytes(fc, data); err != nil {
 		return nil, err
 	}
 	return fc, nil

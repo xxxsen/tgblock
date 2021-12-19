@@ -6,6 +6,7 @@ import (
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/processor"
+	"tgblock/shortten"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,8 +53,12 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 	if err != nil {
 		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrUnknown, "finish upload failed", err)
 	}
+	fileid, err := shortten.Encode(ctx, finish.FileId)
+	if err != nil {
+		return http.StatusInternalServerError, nil, module.NewAPIError(constants.ErrMarshal, "encode fileid fail")
+	}
 	return http.StatusOK, &PostUploadResponse{
-		FileId: finish.FileId,
+		FileId: fileid,
 		Hash:   part.Hash,
 		Size:   size,
 	}, nil

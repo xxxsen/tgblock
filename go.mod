@@ -12,4 +12,5 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xxxsen/envflag v0.0.1
 	github.com/xxxsen/log v0.0.2
+	google.golang.org/protobuf v1.26.0
 )
