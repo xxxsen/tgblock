@@ -6,6 +6,7 @@ import (
 
 	_ "tgblock/module/download"
 	_ "tgblock/module/meta"
+	_ "tgblock/module/sys"
 	_ "tgblock/module/upload"
 
 	flag "github.com/xxxsen/envflag"

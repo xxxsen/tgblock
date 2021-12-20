@@ -1,6 +1,7 @@
 package meta
 
 import (
+	codec "tgblock/coder/server"
 	"tgblock/module"
 
 	"github.com/gin-gonic/gin"
@@ -12,5 +13,6 @@ func init() {
 
 func InitModule(router *gin.Engine) {
 	group := router.Group("/api/meta")
-	group.GET("/getfileinfo", module.URLWrap(GetFileInfo, &GetFileInfoRequest{}))
+	group.GET("/getfileinfo", module.CodecWrap(GetFileInfo,
+		codec.MakeCodec(codec.DefaultJsonCodec, codec.DefaultURLCodec), &GetFileInfoRequest{}))
 }

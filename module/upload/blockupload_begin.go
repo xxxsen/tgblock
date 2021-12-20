@@ -2,6 +2,7 @@ package upload
 
 import (
 	"net/http"
+	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/processor"
@@ -15,7 +16,7 @@ func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params inte
 		len(req.Hash) > 128 || len(req.Name) == 0 ||
 		len(req.Name) > 1024 || req.FileSize == 0 ||
 		req.FileSize > sctx.MaxFileSize {
-		return http.StatusBadRequest, nil, module.NewAPIError(constants.ErrParams, "invalid params")
+		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid params")
 	}
 	uploader := processor.NewFileProcessor(sctx.Bot)
 	begin, err := uploader.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
@@ -25,7 +26,7 @@ func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params inte
 		HASH:      req.Hash,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrUnknown, "call create upload fail", err)
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "call create upload fail", err)
 	}
 	return http.StatusOK, &BlockUploadBeginResponse{
 		UploadId: begin.UploadId,

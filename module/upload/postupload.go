@@ -3,6 +3,7 @@ package upload
 import (
 	"fmt"
 	"net/http"
+	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/processor"
@@ -14,7 +15,7 @@ import (
 func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
-		return http.StatusBadRequest, nil, module.WrapError(constants.ErrParams, "open file invalid", err)
+		return http.StatusBadRequest, nil, errs.WrapError(constants.ErrParams, "open file invalid", err)
 	}
 	defer file.Close()
 	var (
@@ -23,11 +24,11 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 	)
 	if size > sctx.BlockSize {
 		return http.StatusBadRequest, nil,
-			module.NewAPIError(constants.ErrParams, fmt.Sprintf("size exceed, should less than:%d", sctx.BlockSize))
+			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("size exceed, should less than:%d", sctx.BlockSize))
 	}
 	if len(name) > constants.MaxFileName {
 		return http.StatusBadRequest, nil,
-			module.NewAPIError(constants.ErrParams, fmt.Sprintf("name too long, should less than:%d", constants.MaxFileName))
+			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("name too long, should less than:%d", constants.MaxFileName))
 	}
 	uploader := processor.NewFileProcessor(sctx.Bot)
 
@@ -37,7 +38,7 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 		BlockSize: sctx.BlockSize,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrUnknown, "create upload fail", err)
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "create upload fail", err)
 	}
 	part, err := uploader.PartFileUpload(ctx, &processor.PartFileUploadRequest{
 		UploadId: begin.UploadId,
@@ -45,17 +46,17 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 		PartSize: size,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrUnknown, "upload part fail", err)
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "upload part fail", err)
 	}
 	finish, err := uploader.FinishFileUpload(ctx, &processor.FinishFileUploadRequest{
 		UploadId: begin.UploadId,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrUnknown, "finish upload failed", err)
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "finish upload failed", err)
 	}
 	fileid, err := shortten.Encode(ctx, finish.FileId)
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.NewAPIError(constants.ErrMarshal, "encode fileid fail")
+		return http.StatusInternalServerError, nil, errs.NewAPIError(constants.ErrMarshal, "encode fileid fail")
 	}
 	return http.StatusOK, &PostUploadResponse{
 		FileId: fileid,

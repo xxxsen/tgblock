@@ -2,6 +2,7 @@ package meta
 
 import (
 	"net/http"
+	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/processor"
@@ -13,16 +14,16 @@ import (
 func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
 	req := params.(*GetFileInfoRequest)
 	if len(req.FileId) == 0 {
-		return http.StatusBadRequest, nil, module.NewAPIError(constants.ErrParams, "invalid fileid")
+		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid fileid")
 	}
 	fileid, err := shortten.Decode(ctx, req.FileId)
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.NewAPIError(constants.ErrUnMarshal, "decode fileid fail")
+		return http.StatusInternalServerError, nil, errs.NewAPIError(constants.ErrUnMarshal, "decode fileid fail")
 	}
 	process := processor.NewFileProcessor(sctx.Bot)
 	meta, err := process.GetFileMeta(ctx, fileid)
 	if err != nil {
-		return http.StatusInternalServerError, nil, module.WrapError(constants.ErrIO, "get file meta fail", err)
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "get file meta fail", err)
 	}
 	rsp := &GetFileInfoResponse{
 		CreateTime: meta.CreateTime,
