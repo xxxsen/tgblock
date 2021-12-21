@@ -32,6 +32,7 @@ func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface
 		Hash:       meta.FileHash,
 		BlockSize:  meta.BlockSize,
 		BlockCount: meta.BlockCount,
+		FileName:   meta.Name,
 		BlockHash:  nil,
 	}
 	for _, item := range meta.FileList {

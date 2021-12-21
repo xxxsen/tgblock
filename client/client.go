@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"strings"
 	codec "tgblock/coder/client"
+	"tgblock/hasher"
 	"tgblock/module/download"
 	"tgblock/module/meta"
 	"tgblock/module/sys"
 	"tgblock/module/upload"
-	"tgblock/processor"
 	"time"
 )
 
@@ -175,7 +175,7 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 		if i == int(maxBlock)-1 {
 			size = request.Size - request.Size/c.c.BlockSize*c.c.BlockSize
 		}
-		limitReader := processor.NewShaReader(io.LimitReader(request.Reader, size))
+		limitReader := hasher.NewMD5Reader(io.LimitReader(request.Reader, size))
 		data, err := ioutil.ReadAll(limitReader)
 		if err != nil {
 			return nil, fmt.Errorf("read part fail, err:%v", err)

@@ -1,4 +1,4 @@
-package processor
+package hasher
 
 import (
 	"crypto/md5"
@@ -7,17 +7,17 @@ import (
 	"io"
 )
 
-type ShaReader struct {
+type MD5Reader struct {
 	r      io.Reader
 	hasher hash.Hash
 }
 
-func NewShaReader(r io.Reader) *ShaReader {
+func NewMD5Reader(r io.Reader) *MD5Reader {
 	hasher := md5.New()
-	return &ShaReader{r: r, hasher: hasher}
+	return &MD5Reader{r: r, hasher: hasher}
 }
 
-func (s *ShaReader) Read(buf []byte) (int, error) {
+func (s *MD5Reader) Read(buf []byte) (int, error) {
 	sz, err := s.r.Read(buf)
 	if sz > 0 {
 		s.hasher.Write(buf[:sz])
@@ -25,6 +25,6 @@ func (s *ShaReader) Read(buf []byte) (int, error) {
 	return sz, err
 }
 
-func (s *ShaReader) GetSum() string {
+func (s *MD5Reader) GetSum() string {
 	return hex.EncodeToString(s.hasher.Sum(nil))
 }

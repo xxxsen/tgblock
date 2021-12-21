@@ -12,4 +12,5 @@ type GetFileInfoResponse struct {
 	BlockSize  int64    `json:"block_size"`
 	BlockCount int64    `json:"block_count"`
 	BlockHash  []string `json:"block_hash"`
+	FileName   string   `json:"file_name"`
 }

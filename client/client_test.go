@@ -6,10 +6,10 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
+	"tgblock/hasher"
 	"tgblock/module/download"
 	"tgblock/module/meta"
 	"tgblock/module/sys"
-	"tgblock/processor"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +35,7 @@ func TestUpload(t *testing.T) {
 	client := getClient()
 	data := []byte("hello world, this is a test")
 
-	r := processor.NewShaReader(bytes.NewReader(data))
+	r := hasher.NewMD5Reader(bytes.NewReader(data))
 	io.Copy(ioutil.Discard, r)
 
 	rsp, err := client.BlockUpload(context.Background(), &BlockUploadRequest{
@@ -89,7 +89,7 @@ func TestUploadBigBlock(t *testing.T) {
 		data[i] = byte(i) % 255
 	}
 
-	r := processor.NewShaReader(bytes.NewReader(data))
+	r := hasher.NewMD5Reader(bytes.NewReader(data))
 	io.Copy(ioutil.Discard, r)
 
 	rsp, err := client.BlockUpload(context.Background(), &BlockUploadRequest{

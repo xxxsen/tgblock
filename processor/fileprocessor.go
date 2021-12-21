@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"tgblock/bot"
+	"tgblock/hasher"
 	"tgblock/locker"
 	"tgblock/protos/gen/tgblock"
 	"time"
@@ -63,7 +64,7 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 
 	var (
 		uploadid = req.UploadId
-		reader   = NewShaReader(req.Reader)
+		reader   = hasher.NewMD5Reader(req.Reader)
 		hash     = req.HASH
 		partsize = req.PartSize
 	)
