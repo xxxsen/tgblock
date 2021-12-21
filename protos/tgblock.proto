@@ -16,4 +16,13 @@ message FileContext {
     int64 create_time = 6; //
     int64 finish_time = 7; //
     repeated FilePart file_list = 8; //
+    FileMeta meta = 9; //
+}
+
+message FileMeta {
+    int64 MTime = 1; //
+    int64 CTime = 2; //
+    int64 Mode = 3; //
+    int64 UID = 4; //
+    int64 GID = 5; //
 }
