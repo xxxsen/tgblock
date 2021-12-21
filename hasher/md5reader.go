@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"hash"
 	"io"
+	"io/ioutil"
+	"os"
 )
 
 type MD5Reader struct {
@@ -27,4 +29,17 @@ func (s *MD5Reader) Read(buf []byte) (int, error) {
 
 func (s *MD5Reader) GetSum() string {
 	return hex.EncodeToString(s.hasher.Sum(nil))
+}
+
+func CalcMD5(file string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	r := NewMD5Reader(f)
+	if _, err := io.Copy(ioutil.Discard, r); err != nil {
+		return "", err
+	}
+	return r.GetSum(), nil
 }

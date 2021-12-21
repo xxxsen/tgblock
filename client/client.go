@@ -51,6 +51,10 @@ func New(opts ...Option) (*Client, error) {
 	return cli, nil
 }
 
+func (c *Client) MaxFileSize() int64 {
+	return c.c.MaxFileSize
+}
+
 func (c *Client) buildURL(api string) string {
 	return c.c.Address + api
 }
