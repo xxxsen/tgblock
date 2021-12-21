@@ -80,13 +80,12 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
 	}
-	if len(fc.FileList) >= int(fc.BlockCount) {
+	if req.BlockIndex < 0 || req.BlockIndex >= fc.BlockCount || req.BlockIndex > int64(len(fc.FileList)) {
 		return nil, fmt.Errorf("invalid block count")
 	}
 	if len(fc.FileList) != int(fc.BlockCount)-1 && req.PartSize > fc.BlockSize {
 		return nil, fmt.Errorf("invalid block size, should be:%d", fc.BlockSize)
 	}
-
 	fileid, err := p.tgbot.Upload(ctx, partsize, reader)
 	if err != nil {
 		return nil, fmt.Errorf("upload fail, err:%v", err)
@@ -95,10 +94,15 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	if len(hash) != 0 && sum != hash {
 		return nil, fmt.Errorf("checksum not match, should be:%s, get:%s", sum, hash)
 	}
-	fc.FileList = append(fc.FileList, &tgblock.FilePart{
+	blockInfo := &tgblock.FilePart{
 		FileId: fileid,
 		Hash:   sum,
-	})
+	}
+	if int(req.BlockIndex) == len(fc.FileList) {
+		fc.FileList = append(fc.FileList, blockInfo)
+	} else {
+		fc.FileList[req.BlockIndex] = blockInfo
+	}
 	if err := p.writeToFile(uploadid, fc); err != nil {
 		return nil, fmt.Errorf("write ctx to file fail")
 	}

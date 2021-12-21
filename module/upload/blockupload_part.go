@@ -3,6 +3,7 @@ package upload
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
@@ -21,7 +22,12 @@ func BlockUploadPart(sctx *module.ServiceContext, ctx *gin.Context, params inter
 		size     = header.Size
 		uploadid = ctx.Request.FormValue("uploadid")
 		hash     = ctx.Request.FormValue("hash")
+		sindex   = ctx.Request.FormValue("index")
 	)
+	index, err := strconv.ParseInt(sindex, 10, 64)
+	if err != nil || index < 0 {
+		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid index")
+	}
 	if size > sctx.BlockSize {
 		return http.StatusBadRequest, nil,
 			errs.WrapError(constants.ErrParams, fmt.Sprintf("size exceed, should less than:%d", sctx.BlockSize), err)
@@ -35,10 +41,11 @@ func BlockUploadPart(sctx *module.ServiceContext, ctx *gin.Context, params inter
 	}
 	uploader := processor.NewFileProcessor(sctx.Bot)
 	_, err = uploader.PartFileUpload(ctx, &processor.PartFileUploadRequest{
-		UploadId: uploadid,
-		HASH:     hash,
-		PartSize: size,
-		Reader:   file,
+		UploadId:   uploadid,
+		HASH:       hash,
+		PartSize:   size,
+		Reader:     file,
+		BlockIndex: index,
 	})
 	if err != nil {
 		return http.StatusBadRequest, nil, errs.WrapError(constants.ErrIO, "upload fail", err)

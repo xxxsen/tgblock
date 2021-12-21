@@ -19,10 +19,11 @@ type CreateFileUploadResponse struct {
 }
 
 type PartFileUploadRequest struct {
-	UploadId string
-	Reader   io.Reader
-	PartSize int64
-	HASH     string
+	UploadId   string
+	Reader     io.Reader
+	PartSize   int64
+	HASH       string
+	BlockIndex int64
 }
 
 type PartFileUploadResponse struct {

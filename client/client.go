@@ -133,10 +133,11 @@ func (c *Client) BlockUploadBegin(ctx context.Context, request *upload.BlockUplo
 	return rsp, nil
 }
 
-func (c *Client) BlockUploadPart(ctx context.Context, uploadid string, file *FileInfo) error {
+func (c *Client) BlockUploadPart(ctx context.Context, uploadid string, index int64, file *FileInfo) error {
 	m := make(map[string]interface{})
 	m["uploadid"] = uploadid
 	m["hash"] = file.Hash
+	m["index"] = index
 	m["file"] = &codec.FormFileInfo{
 		Name: file.Name,
 		Size: file.Size,
@@ -179,7 +180,7 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 		if err != nil {
 			return nil, fmt.Errorf("read part fail, err:%v", err)
 		}
-		if err := c.BlockUploadPart(ctx, begin.UploadId, &FileInfo{
+		if err := c.BlockUploadPart(ctx, begin.UploadId, int64(i), &FileInfo{
 			Name: fmt.Sprintf("%s.part.%d", request.Name, i),
 			Size: size,
 			Hash: limitReader.GetSum(),
