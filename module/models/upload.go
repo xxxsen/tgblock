@@ -1,4 +1,4 @@
-package upload
+package models
 
 type PostUploadResponse struct {
 	FileId string `json:"fileid"`

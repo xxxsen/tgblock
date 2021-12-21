@@ -3,12 +3,13 @@ package sys
 import (
 	"net/http"
 	"tgblock/module"
+	"tgblock/module/models"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetSysInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
-	rsp := &GetSysInfoResponse{
+	rsp := &models.GetSysInfoResponse{
 		MaxFileSize: sctx.MaxFileSize,
 		BlockSize:   sctx.BlockSize,
 	}

@@ -1,4 +1,4 @@
-package download
+package models
 
 type DownloadFileRequest struct {
 	FileId string `schema:"file_id"`

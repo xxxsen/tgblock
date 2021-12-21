@@ -5,6 +5,7 @@ import (
 	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
+	"tgblock/module/models"
 	"tgblock/processor"
 	"tgblock/shortten"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
-	req := params.(*GetFileInfoRequest)
+	req := params.(*models.GetFileInfoRequest)
 	if len(req.FileId) == 0 {
 		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid fileid")
 	}
@@ -25,7 +26,7 @@ func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "get file meta fail", err)
 	}
-	rsp := &GetFileInfoResponse{
+	rsp := &models.GetFileInfoResponse{
 		CreateTime: meta.CreateTime,
 		FinishTime: meta.FinishTime,
 		FileSize:   meta.FileSize,

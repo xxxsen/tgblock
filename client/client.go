@@ -11,10 +11,7 @@ import (
 	"strings"
 	codec "tgblock/coder/client"
 	"tgblock/hasher"
-	"tgblock/module/download"
-	"tgblock/module/meta"
-	"tgblock/module/sys"
-	"tgblock/module/upload"
+	"tgblock/module/models"
 	"time"
 )
 
@@ -44,7 +41,7 @@ func New(opts ...Option) (*Client, error) {
 
 	cli := &Client{c: c, client: client}
 	if c.BlockSize == 0 || c.MaxFileSize == 0 {
-		info, err := cli.GetSysInfo(context.Background(), &sys.GetSysInfoRequest{})
+		info, err := cli.GetSysInfo(context.Background(), &models.GetSysInfoRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -93,9 +90,9 @@ func (c *Client) call(method, api string, codec codec.Codec, input interface{}, 
 	return nil
 }
 
-func (c *Client) GetFileInfo(ctx context.Context, request *meta.GetFileInfoRequest) (*meta.GetFileInfoResponse, error) {
+func (c *Client) GetFileInfo(ctx context.Context, request *models.GetFileInfoRequest) (*models.GetFileInfoResponse, error) {
 
-	rsp := &meta.GetFileInfoResponse{}
+	rsp := &models.GetFileInfoResponse{}
 	codec := codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultJsonCodec)
 
 	if err := c.call(http.MethodGet, apiGetFileMeta, codec, request, rsp); err != nil {
@@ -104,7 +101,7 @@ func (c *Client) GetFileInfo(ctx context.Context, request *meta.GetFileInfoReque
 	return rsp, nil
 }
 
-func (c *Client) DownloadBlock(ctx context.Context, request *download.DownloadBlockRequest) (io.ReadCloser, error) {
+func (c *Client) DownloadBlock(ctx context.Context, request *models.DownloadBlockRequest) (io.ReadCloser, error) {
 	var rc io.ReadCloser
 	codec := codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultStreamCodec)
 
@@ -114,7 +111,7 @@ func (c *Client) DownloadBlock(ctx context.Context, request *download.DownloadBl
 	return rc, nil
 }
 
-func (c *Client) DownloadFile(ctx context.Context, request *download.DownloadFileRequest) (io.ReadCloser, error) {
+func (c *Client) DownloadFile(ctx context.Context, request *models.DownloadFileRequest) (io.ReadCloser, error) {
 	var rc io.ReadCloser
 
 	codec := codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultStreamCodec)
@@ -124,8 +121,8 @@ func (c *Client) DownloadFile(ctx context.Context, request *download.DownloadFil
 	return rc, nil
 }
 
-func (c *Client) BlockUploadBegin(ctx context.Context, request *upload.BlockUploadBeginRequest) (*upload.BlockUploadBeginResponse, error) {
-	rsp := &upload.BlockUploadBeginResponse{}
+func (c *Client) BlockUploadBegin(ctx context.Context, request *models.BlockUploadBeginRequest) (*models.BlockUploadBeginResponse, error) {
+	rsp := &models.BlockUploadBeginResponse{}
 
 	if err := c.call(http.MethodPost, apiBlockUploadBegin, codec.DefaultJsonCodec, request, rsp); err != nil {
 		return nil, err
@@ -149,8 +146,8 @@ func (c *Client) BlockUploadPart(ctx context.Context, uploadid string, index int
 	return nil
 }
 
-func (c *Client) BlockUploadEnd(ctx context.Context, request *upload.BlockUploadEndRequest) (*upload.BlockUploadEndResponse, error) {
-	rsp := &upload.BlockUploadEndResponse{}
+func (c *Client) BlockUploadEnd(ctx context.Context, request *models.BlockUploadEndRequest) (*models.BlockUploadEndResponse, error) {
+	rsp := &models.BlockUploadEndResponse{}
 	if err := c.call(http.MethodPost, apiBlockUploadEnd, codec.DefaultJsonCodec, request, rsp); err != nil {
 		return nil, err
 	}
@@ -161,7 +158,7 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 	if request.Size == 0 {
 		return nil, fmt.Errorf("empty file")
 	}
-	begin, err := c.BlockUploadBegin(ctx, &upload.BlockUploadBeginRequest{
+	begin, err := c.BlockUploadBegin(ctx, &models.BlockUploadBeginRequest{
 		Name:     request.Name,
 		FileSize: request.Size,
 		Hash:     request.Hash,
@@ -189,7 +186,7 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 			return nil, fmt.Errorf("upload part fail, err:%v", err)
 		}
 	}
-	end, err := c.BlockUploadEnd(ctx, &upload.BlockUploadEndRequest{
+	end, err := c.BlockUploadEnd(ctx, &models.BlockUploadEndRequest{
 		UploadId: begin.UploadId,
 	})
 	if err != nil {
@@ -200,11 +197,11 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 	}, nil
 }
 
-func (c *Client) GetSysInfo(ctx context.Context, request *sys.GetSysInfoRequest) (*sys.GetSysInfoResponse, error) {
+func (c *Client) GetSysInfo(ctx context.Context, request *models.GetSysInfoRequest) (*models.GetSysInfoResponse, error) {
 	if request.Timestamp == 0 {
 		request.Timestamp = time.Now().Unix()
 	}
-	rsp := &sys.GetSysInfoResponse{}
+	rsp := &models.GetSysInfoResponse{}
 	if err := c.call(http.MethodGet, apiGetSysInfo, codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultJsonCodec), request, rsp); err != nil {
 		return nil, err
 	}

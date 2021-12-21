@@ -1,4 +1,4 @@
-package sys
+package models
 
 type GetSysInfoRequest struct {
 	Timestamp int64 `schema:"timestamp"`

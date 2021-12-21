@@ -6,6 +6,7 @@ import (
 	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
+	"tgblock/module/models"
 	"tgblock/processor"
 	"tgblock/shortten"
 
@@ -58,7 +59,7 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.NewAPIError(constants.ErrMarshal, "encode fileid fail")
 	}
-	return http.StatusOK, &PostUploadResponse{
+	return http.StatusOK, &models.PostUploadResponse{
 		FileId: fileid,
 		Hash:   part.Hash,
 		Size:   size,

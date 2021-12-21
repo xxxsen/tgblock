@@ -6,6 +6,7 @@ import (
 	codec "tgblock/coder/server"
 	"tgblock/module"
 	"tgblock/module/constants"
+	"tgblock/module/models"
 	"tgblock/processor"
 	"tgblock/shortten"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func DownloadFile(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
-	req := params.(*DownloadFileRequest)
+	req := params.(*models.DownloadFileRequest)
 	if len(req.FileId) == 0 {
 		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid fileid")
 	}

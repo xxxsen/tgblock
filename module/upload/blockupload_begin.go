@@ -5,13 +5,14 @@ import (
 	"tgblock/coder/errs"
 	"tgblock/module"
 	"tgblock/module/constants"
+	"tgblock/module/models"
 	"tgblock/processor"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
-	req := params.(*BlockUploadBeginRequest)
+	req := params.(*models.BlockUploadBeginRequest)
 	if len(req.Hash) == 0 ||
 		len(req.Hash) > 128 || len(req.Name) == 0 ||
 		len(req.Name) > 1024 || req.FileSize == 0 ||
@@ -28,7 +29,7 @@ func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params inte
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "call create upload fail", err)
 	}
-	return http.StatusOK, &BlockUploadBeginResponse{
+	return http.StatusOK, &models.BlockUploadBeginResponse{
 		UploadId: begin.UploadId,
 	}, nil
 }

@@ -10,8 +10,7 @@ import (
 	"strings"
 	"tgblock/client"
 	"tgblock/hasher"
-	"tgblock/module/download"
-	"tgblock/module/meta"
+	"tgblock/module/models"
 )
 
 func init() {
@@ -69,7 +68,7 @@ func (c *CmdDownload) Exec(ctx context.Context, cli *client.Client) error {
 		log.Printf("create dir fail, err:%v", err)
 		return err
 	}
-	info, err := cli.GetFileInfo(ctx, &meta.GetFileInfoRequest{
+	info, err := cli.GetFileInfo(ctx, &models.GetFileInfoRequest{
 		FileId: *c.fileid,
 	})
 	if err != nil {
@@ -77,7 +76,7 @@ func (c *CmdDownload) Exec(ctx context.Context, cli *client.Client) error {
 		return err
 	}
 	log.Printf("read file info succ, hash:%s, size:%d, block count:%d", info.Hash, info.FileSize, info.BlockCount)
-	rc, err := cli.DownloadFile(ctx, &download.DownloadFileRequest{FileId: *c.fileid})
+	rc, err := cli.DownloadFile(ctx, &models.DownloadFileRequest{FileId: *c.fileid})
 	if err != nil {
 		log.Printf("open stream for download fail, err:%v", err)
 		return err

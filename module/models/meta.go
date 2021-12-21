@@ -1,4 +1,4 @@
-package meta
+package models
 
 type GetFileInfoRequest struct {
 	FileId string `schema:"file_id"`

@@ -7,9 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 	"tgblock/hasher"
-	"tgblock/module/download"
-	"tgblock/module/meta"
-	"tgblock/module/sys"
+	"tgblock/module/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +24,7 @@ func getClient() *Client {
 
 func TestGetSysInfo(t *testing.T) {
 	client := getClient()
-	rsp, err := client.GetSysInfo(context.Background(), &sys.GetSysInfoRequest{})
+	rsp, err := client.GetSysInfo(context.Background(), &models.GetSysInfoRequest{})
 	assert.NoError(t, err)
 	t.Logf("rsp:%+v", rsp)
 }
@@ -50,7 +48,7 @@ func TestUpload(t *testing.T) {
 
 func TestDownload(t *testing.T) {
 	client := getClient()
-	rsp, err := client.DownloadFile(context.Background(), &download.DownloadFileRequest{
+	rsp, err := client.DownloadFile(context.Background(), &models.DownloadFileRequest{
 		FileId: testFileId,
 	})
 	assert.NoError(t, err)
@@ -62,7 +60,7 @@ func TestDownload(t *testing.T) {
 
 func TestDownloadBlock(t *testing.T) {
 	client := getClient()
-	rsp, err := client.DownloadBlock(context.Background(), &download.DownloadBlockRequest{
+	rsp, err := client.DownloadBlock(context.Background(), &models.DownloadBlockRequest{
 		FileId:     testFileId,
 		BlockIndex: 0,
 	})
@@ -75,7 +73,7 @@ func TestDownloadBlock(t *testing.T) {
 
 func TestGetFileInfo(t *testing.T) {
 	client := getClient()
-	rsp, err := client.GetFileInfo(context.Background(), &meta.GetFileInfoRequest{
+	rsp, err := client.GetFileInfo(context.Background(), &models.GetFileInfoRequest{
 		FileId: testFileId,
 	})
 	assert.NoError(t, err)
