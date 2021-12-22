@@ -60,6 +60,7 @@ func (c *CmdUpload) Exec(ctx context.Context, cli *client.Client) error {
 		Hash:   md5str,
 		Size:   stat.Size(),
 		Reader: reader,
+		Mode:   int64(stat.Mode()),
 	})
 	if err != nil {
 		log.Printf("upload file fail, err:%v", err)

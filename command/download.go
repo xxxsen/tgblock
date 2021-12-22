@@ -83,7 +83,11 @@ func (c *CmdDownload) Exec(ctx context.Context, cli *client.Client) error {
 	}
 	defer rc.Close()
 	hashReader := hasher.NewMD5Reader(rc)
-	file, err := os.OpenFile(c.buildDownloadName(*c.target, info.FileName), os.O_CREATE|os.O_WRONLY, 0755)
+	mode := 0755
+	if info.FileMode != 0 {
+		mode = int(info.FileMode)
+	}
+	file, err := os.OpenFile(c.buildDownloadName(*c.target, info.FileName), os.O_CREATE|os.O_WRONLY, os.FileMode(mode))
 	if err != nil {
 		log.Printf("open file for download fail, err:%v", err)
 		return err

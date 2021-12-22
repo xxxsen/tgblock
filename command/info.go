@@ -59,6 +59,7 @@ func (c *CmdInfo) Exec(ctx context.Context, cli *client.Client) error {
 	fmt.Printf("Block Count:%d\n", info.BlockCount)
 	fmt.Printf("Create Time:%d\n", info.CreateTime)
 	fmt.Printf("Finish Time:%d\n", info.FinishTime)
+	fmt.Printf("File Mode:%d\n", info.FileMode)
 	fmt.Printf("===BLOCK HASH===\n")
 	for index, item := range info.BlockHash {
 		fmt.Printf("IDX:%d, HASH:%s\n", index, item)
