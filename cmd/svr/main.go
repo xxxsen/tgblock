@@ -19,6 +19,7 @@ var maxFileSize = flag.Int64("max_file_size", 1*1024*1024*1024, "max size per fi
 var blockSize = flag.Int64("block_size", 20*1024*1024, "block size")
 var chatid = flag.Int64("chatid", 0, "chatid")
 var loglevel = flag.String("log_level", "trace", "log level")
+var accessToken = flag.String("access_token", "", "access token")
 
 func main() {
 	flag.Parse()
@@ -30,6 +31,7 @@ func main() {
 	log.Infof("BLOCK_SIZE:%v", *blockSize)
 	log.Infof("CHATID:%v", *chatid)
 	log.Infof("LOG_LEVEL:%v", *loglevel)
+	log.Infof("ACCESS_TOKEN:%v", *accessToken)
 
 	if len(*token) == 0 || *chatid == 0 || len(*listen) == 0 || *maxFileSize == 0 {
 		log.Fatal("invalid params")
@@ -47,6 +49,7 @@ func main() {
 		module.WithBot(tgbot),
 		module.WithMaxFileSize(*maxFileSize),
 		module.WithBlockSize(*blockSize),
+		module.WithAccessToken(*accessToken),
 	); err != nil {
 		log.Fatalf("init module fail, err:%v", err)
 	}

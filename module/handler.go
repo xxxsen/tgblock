@@ -1,7 +1,6 @@
 package module
 
 import (
-	"io"
 	"net/http"
 	"reflect"
 
@@ -14,7 +13,6 @@ import (
 )
 
 type CGIHandler func(sctx *ServiceContext, ctx *gin.Context, request interface{}) (int, interface{}, error)
-type StreamHandler func(sctx *ServiceContext, ctx *gin.Context, request interface{}) (int, io.ReadCloser, error)
 
 func newInst(params interface{}) interface{} {
 	if params == nil {
@@ -25,8 +23,21 @@ func newInst(params interface{}) interface{} {
 	return v.Interface()
 }
 
-func CodecWrap(handler CGIHandler, codec coder.Codec, params interface{}) gin.HandlerFunc {
+func doAuth(auth CommonAuth, sctx *ServiceContext, gctx *gin.Context) bool {
+	ok, err := auth.Auth(sctx, gctx)
+	if err != nil {
+		log.Errorf("url:%s, auth fail, err:%v", gctx.Request.URL.Path, err)
+		return false
+	}
+	return ok
+}
+
+func CodecWrap(handler CGIHandler, codec coder.Codec, params interface{}, auth CommonAuth) gin.HandlerFunc {
 	return func(gctx *gin.Context) {
+		if !doAuth(auth, defaultCtx, gctx) {
+			gctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
 		inst := newInst(params)
 		if inst != nil {
 			if err := codec.Decode(gctx, inst); err != nil {

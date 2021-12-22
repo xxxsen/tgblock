@@ -15,5 +15,5 @@ func init() {
 func InitModule(router *gin.Engine) {
 	group := router.Group("/api/meta")
 	group.GET("/getfileinfo", module.CodecWrap(GetFileInfo,
-		codec.MakeCodec(codec.DefaultJsonCodec, codec.DefaultURLCodec), &models.GetFileInfoRequest{}))
+		codec.MakeCodec(codec.DefaultJsonCodec, codec.DefaultURLCodec), &models.GetFileInfoRequest{}, module.TokenAuth))
 }
