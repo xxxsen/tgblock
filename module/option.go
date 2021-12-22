@@ -6,7 +6,8 @@ type ServiceContext struct {
 	Bot         *bot.TGBotService
 	MaxFileSize int64
 	BlockSize   int64
-	AccessToken string
+	SecretId    string
+	SecretKey   string
 }
 
 type Option func(c *ServiceContext)
@@ -29,8 +30,9 @@ func WithBlockSize(sz int64) Option {
 	}
 }
 
-func WithAccessToken(tk string) Option {
+func WithSecret(secretid string, secretkey string) Option {
 	return func(c *ServiceContext) {
-		c.AccessToken = tk
+		c.SecretId = secretid
+		c.SecretKey = secretkey
 	}
 }

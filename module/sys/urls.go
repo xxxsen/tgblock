@@ -15,6 +15,6 @@ func init() {
 func InitModule(router *gin.Engine) {
 	group := router.Group("/api/sys")
 	group.GET("/getsysinfo", module.CodecWrap(GetSysInfo,
-		codec.MakeCodec(codec.DefaultJsonCodec, codec.DefaultURLCodec), &models.GetSysInfoRequest{}, module.TokenAuth))
+		codec.MakeCodec(codec.DefaultJsonCodec, codec.DefaultURLCodec), &models.GetSysInfoRequest{}, module.SecretAuth))
 
 }

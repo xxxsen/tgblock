@@ -14,8 +14,8 @@ func init() {
 
 func InitModule(router *gin.Engine) {
 	group := router.Group("/api/upload")
-	group.POST("/post", module.CodecWrap(PostUpload, codec.MakeEncoder(codec.DefaultJsonCodec), nil, module.TokenAuth))
-	group.POST("/block/begin", module.CodecWrap(BlockUploadBegin, codec.DefaultJsonCodec, &models.BlockUploadBeginRequest{}, module.TokenAuth))
-	group.POST("/block/part", module.CodecWrap(BlockUploadPart, codec.MakeEncoder(codec.DefaultJsonCodec), nil, module.TokenAuth))
-	group.POST("/block/end", module.CodecWrap(BlockUploadEnd, codec.DefaultJsonCodec, &models.BlockUploadEndRequest{}, module.TokenAuth))
+	group.POST("/post", module.CodecWrap(PostUpload, codec.MakeEncoder(codec.DefaultJsonCodec), nil, module.SecretAuth))
+	group.POST("/block/begin", module.CodecWrap(BlockUploadBegin, codec.DefaultJsonCodec, &models.BlockUploadBeginRequest{}, module.SecretAuth))
+	group.POST("/block/part", module.CodecWrap(BlockUploadPart, codec.MakeEncoder(codec.DefaultJsonCodec), nil, module.SecretAuth))
+	group.POST("/block/end", module.CodecWrap(BlockUploadEnd, codec.DefaultJsonCodec, &models.BlockUploadEndRequest{}, module.SecretAuth))
 }

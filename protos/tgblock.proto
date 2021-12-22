@@ -18,3 +18,8 @@ message FileContext {
     repeated FilePart file_list = 8; //
     int64 file_mode = 9; //
 }
+
+message SigContext {
+    string secret_id = 1; //
+    int64 timestamp = 2;//
+}

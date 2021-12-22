@@ -36,7 +36,8 @@ func main() {
 	}
 	cli, err := client.New(
 		client.WithAddress(c.Server),
-		client.WithAccessToken(c.AccessToken),
+		client.WithSecret(c.Secretid, c.Secretkey),
+		client.WithMaxSigAliveTime(c.MaxSigAliveTime),
 		client.WithFileSize(c.MaxFileSize),
 		client.WithBlockSize(c.BlockSize),
 	)

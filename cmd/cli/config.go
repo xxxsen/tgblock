@@ -6,10 +6,12 @@ import (
 )
 
 type Config struct {
-	Server      string `json:"server"`
-	AccessToken string `json:"access_token"`
-	MaxFileSize int64  `json:"max_file_size"`
-	BlockSize   int64  `json:"block_size"`
+	Server          string `json:"server"`
+	Secretid        string `json:"secret_id"`
+	Secretkey       string `json:"secret_key"`
+	MaxSigAliveTime int64  `json:"max_sig_alive_time"`
+	MaxFileSize     int64  `json:"max_file_size"`
+	BlockSize       int64  `json:"block_size"`
 }
 
 func ParseFile(f string) (*Config, error) {

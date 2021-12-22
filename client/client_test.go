@@ -15,7 +15,7 @@ import (
 var testFileId = "ABj4C6PqYcBg9lWhAbvIAAEEpAAA-uoTMoitulXfb1fNygokdD2CcYbMAADkxAAUgACAQB"
 
 func getClient() *Client {
-	cli, err := New(WithAddress("http://127.0.0.1:8444"), WithAccessToken("abc"))
+	cli, err := New(WithAddress("http://127.0.0.1:8444"), WithSecret("hello", "world"))
 	if err != nil {
 		panic(err)
 	}
