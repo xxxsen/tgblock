@@ -6,6 +6,7 @@ import (
 
 	_ "tgblock/module/download"
 	_ "tgblock/module/meta"
+	_ "tgblock/module/share"
 	_ "tgblock/module/sys"
 	_ "tgblock/module/upload"
 
@@ -21,6 +22,8 @@ var chatid = flag.Int64("chatid", 0, "chatid")
 var loglevel = flag.String("log_level", "trace", "log level")
 var secretid = flag.String("secretid", "", "secret id")
 var secretkey = flag.String("secretkey", "", "secret key")
+var domain = flag.String("domain", "example.com", "host name")
+var schema = flag.String("schema", "http", "schema")
 
 func main() {
 	flag.Parse()
@@ -34,6 +37,8 @@ func main() {
 	log.Infof("LOG_LEVEL:%v", *loglevel)
 	log.Infof("SECRET_ID:%v", *secretid)
 	log.Infof("SECRET_KEY:%v", *secretkey)
+	log.Infof("DOMAIN:%v", *domain)
+	log.Infof("SCHEMA:%v", *schema)
 
 	if len(*token) == 0 || *chatid == 0 || len(*listen) == 0 || *maxFileSize == 0 {
 		log.Fatal("invalid params")
@@ -52,6 +57,7 @@ func main() {
 		module.WithMaxFileSize(*maxFileSize),
 		module.WithBlockSize(*blockSize),
 		module.WithSecret(*secretid, *secretkey),
+		module.WithDomain(*schema, *domain),
 	); err != nil {
 		log.Fatalf("init module fail, err:%v", err)
 	}

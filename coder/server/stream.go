@@ -36,7 +36,7 @@ func (c *StreamCodec) Encode(ctx *gin.Context, code int, input interface{}, err 
 	defer r.Stream.Close()
 
 	if r.Size != 0 {
-		ctx.Request.ContentLength = r.Size
+		ctx.Writer.Header().Set("Content-Length", fmt.Sprintf("%d", r.Size))
 	}
 	if len(r.Name) != 0 {
 		ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", r.Name))

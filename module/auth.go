@@ -6,6 +6,7 @@ import (
 	"tgblock/security"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xxxsen/log"
 )
 
 type CommonAuth interface {
@@ -26,6 +27,11 @@ type secretAuth struct {
 }
 
 func (a *secretAuth) Auth(sctx *ServiceContext, ctx *gin.Context) (bool, error) {
+	if len(sctx.SecretId) == 0 {
+		log.Errorf("secret id not config, skip auth check")
+		return true, nil
+	}
+
 	secid := ctx.GetHeader("secret_id")
 	sects := ctx.GetHeader("secret_ts")
 	secsig := ctx.GetHeader("secret_sig")
