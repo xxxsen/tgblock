@@ -166,6 +166,7 @@ func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (
 		Name:     request.Name,
 		FileSize: request.Size,
 		Hash:     request.Hash,
+		FileMode: request.Mode,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("block upload begin fail, err:%v", err)

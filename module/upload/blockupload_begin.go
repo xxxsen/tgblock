@@ -25,6 +25,7 @@ func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params inte
 		FileSize:  req.FileSize,
 		BlockSize: sctx.BlockSize,
 		HASH:      req.Hash,
+		FileMode:  req.FileMode,
 	})
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "call create upload fail", err)

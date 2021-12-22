@@ -39,6 +39,9 @@ func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 
 		return nil, fmt.Errorf("invalid params")
 	}
+	if req.FileMode == 0 {
+		req.FileMode = 0755
+	}
 	fileid := uuid.NewString()
 	fctx := &tgblock.FileContext{
 		Name:       req.Name,
@@ -47,6 +50,7 @@ func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 		BlockSize:  req.BlockSize,
 		BlockCount: req.FileSize / req.BlockSize,
 		CreateTime: time.Now().Unix(),
+		FileMode:   req.FileMode,
 	}
 	if req.FileSize%req.BlockSize != 0 {
 		fctx.BlockCount += 1

@@ -12,6 +12,7 @@ type CreateFileUploadRequest struct {
 	FileSize  int64
 	HASH      string
 	BlockSize int64
+	FileMode  int64
 }
 
 type CreateFileUploadResponse struct {

@@ -10,6 +10,7 @@ type BlockUploadBeginRequest struct {
 	Name     string `json:"name"`
 	FileSize int64  `json:"file_size"`
 	Hash     string `json:"hash"`
+	FileMode int64  `json:"file_mode"`
 }
 
 type BlockUploadBeginResponse struct {

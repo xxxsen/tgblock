@@ -14,6 +14,7 @@ type BlockUploadRequest struct {
 	Size   int64
 	Reader io.Reader
 	Hash   string
+	Mode   int64
 }
 
 type BlockUploadResponse struct {
