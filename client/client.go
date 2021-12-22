@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	codec "tgblock/coder/client"
 	"tgblock/hasher"
@@ -171,6 +173,36 @@ func (c *Client) BlockUploadEnd(ctx context.Context, request *models.BlockUpload
 	return rsp, nil
 }
 
+func (c *Client) BlockUploadFile(ctx context.Context, file string) (string, error) {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return "", err
+	}
+	if stat.Size() > c.MaxFileSize() {
+		return "", fmt.Errorf("size exceed, max:%d", c.MaxFileSize())
+	}
+	md5str, err := hasher.CalcMD5(file)
+	if err != nil {
+		return "", err
+	}
+	reader, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+	rsp, err := c.BlockUpload(ctx, &BlockUploadRequest{
+		Name:   filepath.Base(file),
+		Hash:   md5str,
+		Size:   stat.Size(),
+		Reader: reader,
+		Mode:   int64(stat.Mode()),
+	})
+	if err != nil {
+		return "", err
+	}
+	return rsp.FileId, nil
+}
+
 func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (*BlockUploadResponse, error) {
 	if request.Size == 0 {
 		return nil, fmt.Errorf("empty file")
@@ -221,6 +253,17 @@ func (c *Client) GetSysInfo(ctx context.Context, request *models.GetSysInfoReque
 	}
 	rsp := &models.GetSysInfoResponse{}
 	if err := c.call(http.MethodGet, apiGetSysInfo, codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultJsonCodec), request, rsp); err != nil {
+		return nil, err
+	}
+	return rsp, nil
+}
+
+func (c *Client) CreateShare(ctx context.Context, request *models.CreateShareRequest) (*models.CreateShareResponse, error) {
+	if len(request.FileId) == 0 || len(request.Key) == 0 {
+		return nil, fmt.Errorf("invalid fileid/key")
+	}
+	rsp := &models.CreateShareResponse{}
+	if err := c.call(http.MethodPost, apiCreateShare, codec.DefaultJsonCodec, request, rsp); err != nil {
 		return nil, err
 	}
 	return rsp, nil

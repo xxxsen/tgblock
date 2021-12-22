@@ -9,4 +9,5 @@ const (
 	apiBlockUploadEnd   = "/api/upload/block/end"
 	apiPostUpload       = "/api/upload/post"
 	apiGetSysInfo       = "/api/sys/getsysinfo"
+	apiCreateShare      = "/api/share/createshare"
 )
