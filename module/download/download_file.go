@@ -1,6 +1,9 @@
 package download
 
 import (
+	"bytes"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"tgblock/coder/errs"
 	codec "tgblock/coder/server"
@@ -27,9 +30,18 @@ func DownloadFile(sctx *module.ServiceContext, ctx *gin.Context, params interfac
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "read file meta fail", err)
 	}
+	var rc io.ReadCloser
+	if meta.ForceZero {
+		rc = http.NoBody
+	} else if len(meta.ExtData) > 0 {
+		rc = ioutil.NopCloser(bytes.NewReader(meta.ExtData))
+	} else {
+		rc = newMultiBlockReader(sctx, meta)
+	}
+
 	//write download info
 	output := &codec.StreamInfo{
-		Stream: newMultiBlockReader(sctx, meta),
+		Stream: rc,
 		Size:   meta.FileSize,
 		Name:   meta.Name,
 	}

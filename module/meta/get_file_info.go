@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"encoding/base64"
 	"net/http"
 	"tgblock/coder/errs"
 	"tgblock/module"
@@ -36,6 +37,9 @@ func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface
 		FileName:   meta.Name,
 		BlockHash:  nil,
 		FileMode:   meta.FileMode,
+	}
+	if len(meta.ExtData) != 0 {
+		rsp.ExtData = base64.RawStdEncoding.EncodeToString(meta.ExtData)
 	}
 	for _, item := range meta.FileList {
 		rsp.BlockHash = append(rsp.BlockHash, item.Hash)

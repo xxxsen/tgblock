@@ -190,13 +190,17 @@ func (c *Client) BlockUploadFile(ctx context.Context, file string) (string, erro
 		return "", err
 	}
 	defer reader.Close()
-	rsp, err := c.BlockUpload(ctx, &BlockUploadRequest{
+	req := &BlockUploadRequest{
 		Name:   filepath.Base(file),
 		Hash:   md5str,
 		Size:   stat.Size(),
 		Reader: reader,
 		Mode:   int64(stat.Mode()),
-	})
+	}
+	if stat.Size() == 0 {
+		req.ForceZero = true
+	}
+	rsp, err := c.BlockUpload(ctx, req)
 	if err != nil {
 		return "", err
 	}
@@ -204,14 +208,15 @@ func (c *Client) BlockUploadFile(ctx context.Context, file string) (string, erro
 }
 
 func (c *Client) BlockUpload(ctx context.Context, request *BlockUploadRequest) (*BlockUploadResponse, error) {
-	if request.Size == 0 {
+	if request.Size == 0 && !request.ForceZero {
 		return nil, fmt.Errorf("empty file")
 	}
 	begin, err := c.BlockUploadBegin(ctx, &models.BlockUploadBeginRequest{
-		Name:     request.Name,
-		FileSize: request.Size,
-		Hash:     request.Hash,
-		FileMode: request.Mode,
+		Name:      request.Name,
+		FileSize:  request.Size,
+		Hash:      request.Hash,
+		FileMode:  request.Mode,
+		ForceZero: request.ForceZero,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("block upload begin fail, err:%v", err)

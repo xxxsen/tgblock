@@ -17,6 +17,8 @@ message FileContext {
     int64 finish_time = 7; //
     repeated FilePart file_list = 8; //
     int64 file_mode = 9; //
+    bytes ext_data = 10; //对于低于一定长度的数据直接将数据保存在filectx中
+    bool force_zero = 11; //
 }
 
 message SigContext {

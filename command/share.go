@@ -57,10 +57,15 @@ func (c *CmdShare) Exec(ctx context.Context, cli *client.Client) error {
 		}
 		fileid = fid
 	}
+	sec := int64(*c.expirehour*3600 + *c.expireMinute*60 + *c.expireSecond)
+	ts := time.Now().Unix() + sec
+	if sec == 0 {
+		ts = 0
+	}
 	rsp, err := cli.CreateShare(ctx, &models.CreateShareRequest{
 		FileId:     fileid,
 		Key:        *c.key,
-		ExpireTime: time.Now().Unix() + *c.expirehour*3600 + *c.expireMinute*60 + *c.expireSecond,
+		ExpireTime: ts,
 	})
 	if err != nil {
 		log.Printf("create share link fail, err:%v", err)

@@ -19,6 +19,10 @@ import (
 
 var tmpSave = "/tmp/"
 
+const (
+	defaultMiniFileLength = 512 //
+)
+
 type FileProcessor struct {
 	tgbot *bot.TGBotService
 	lcker locker.Locker
@@ -35,7 +39,7 @@ func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 	req *CreateFileUploadRequest) (*CreateFileUploadResponse, error) {
 
 	if len(req.HASH) > 128 || len(req.Name) == 0 ||
-		len(req.Name) > 1024 || req.BlockSize == 0 || req.FileSize == 0 {
+		len(req.Name) > 1024 || req.BlockSize == 0 || (req.FileSize == 0 && !req.ForceZero) {
 
 		return nil, fmt.Errorf("invalid params")
 	}
@@ -51,6 +55,7 @@ func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 		BlockCount: req.FileSize / req.BlockSize,
 		CreateTime: time.Now().Unix(),
 		FileMode:   req.FileMode,
+		ForceZero:  req.ForceZero,
 	}
 	if req.FileSize%req.BlockSize != 0 {
 		fctx.BlockCount += 1
@@ -91,13 +96,22 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	if len(fc.FileList) != int(fc.BlockCount)-1 && req.PartSize > fc.BlockSize {
 		return nil, fmt.Errorf("invalid block size, should be:%d", fc.BlockSize)
 	}
-	fileid, err := p.tgbot.Upload(ctx, partsize, reader)
-	if err != nil {
-		return nil, fmt.Errorf("upload fail, err:%v", err)
-	}
-	sum := reader.GetSum()
-	if len(hash) != 0 && sum != hash {
-		return nil, fmt.Errorf("checksum not match, should be:%s, get:%s", sum, hash)
+	//
+	var sum string
+	var fileid string
+	if req.PartSize < defaultMiniFileLength && req.BlockIndex == 0 {
+		data, err := ioutil.ReadAll(reader)
+		if err != nil {
+			return nil, fmt.Errorf("read data fail, err:%v", err)
+		}
+		sum = reader.GetSum()
+		fc.ExtData = data
+	} else {
+		fileid, err = p.tgbot.Upload(ctx, partsize, reader)
+		if err != nil {
+			return nil, fmt.Errorf("upload fail, err:%v", err)
+		}
+		sum = reader.GetSum()
 	}
 	blockInfo := &tgblock.FilePart{
 		FileId: fileid,
@@ -108,12 +122,15 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	} else {
 		fc.FileList[req.BlockIndex] = blockInfo
 	}
+	if len(hash) != 0 && sum != hash {
+		return nil, fmt.Errorf("checksum not match, should be:%s, get:%s", sum, hash)
+	}
+
 	if err := p.writeToFile(uploadid, fc); err != nil {
 		return nil, fmt.Errorf("write ctx to file fail")
 	}
 	return &PartFileUploadResponse{
-		FileId: fileid,
-		Hash:   sum,
+		Hash: sum,
 	}, nil
 }
 
@@ -134,6 +151,9 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 	fc, err := p.readFromFile(uploadid)
 	if err != nil {
 		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
+	}
+	if !fc.ForceZero && fc.FileSize == 0 {
+		return nil, fmt.Errorf("zero size file found")
 	}
 	fc.FinishTime = time.Now().Unix()
 	if len(fc.FileHash) == 0 && len(fc.FileList) == 1 {

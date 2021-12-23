@@ -13,6 +13,7 @@ type CreateFileUploadRequest struct {
 	HASH      string
 	BlockSize int64
 	FileMode  int64
+	ForceZero bool
 }
 
 type CreateFileUploadResponse struct {
@@ -28,8 +29,7 @@ type PartFileUploadRequest struct {
 }
 
 type PartFileUploadResponse struct {
-	FileId string
-	Hash   string
+	Hash string
 }
 
 type FinishFileUploadRequest struct {

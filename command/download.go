@@ -1,9 +1,12 @@
 package command
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"flag"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -76,12 +79,23 @@ func (c *CmdDownload) Exec(ctx context.Context, cli *client.Client) error {
 		return err
 	}
 	log.Printf("read file info succ, hash:%s, size:%d, block count:%d", info.Hash, info.FileSize, info.BlockCount)
-	rc, err := cli.DownloadFile(ctx, &models.DownloadFileRequest{FileId: *c.fileid})
-	if err != nil {
-		log.Printf("open stream for download fail, err:%v", err)
-		return err
+	var rc io.ReadCloser
+	if len(info.ExtData) != 0 {
+		raw, err := base64.StdEncoding.DecodeString(info.ExtData)
+		if err != nil {
+			log.Printf("decode data from extdata fail, err:%v", err)
+			return err
+		}
+		rc = ioutil.NopCloser(bytes.NewReader(raw))
+	} else {
+		rc, err = cli.DownloadFile(ctx, &models.DownloadFileRequest{FileId: *c.fileid})
+		if err != nil {
+			log.Printf("open stream for download fail, err:%v", err)
+			return err
+		}
 	}
 	defer rc.Close()
+
 	hashReader := hasher.NewMD5Reader(rc)
 	mode := 0755
 	if info.FileMode != 0 {

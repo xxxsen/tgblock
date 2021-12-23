@@ -43,6 +43,7 @@ func (c *CmdInfo) Exec(ctx context.Context, cli *client.Client) error {
 	if err != nil {
 		return err
 	}
+	info.ExtData = "" //remove
 	js, err := json.Marshal(info)
 	if err != nil {
 		log.Printf("marshal response to json fail, err:%v", err)

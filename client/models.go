@@ -10,11 +10,12 @@ type FileInfo struct {
 }
 
 type BlockUploadRequest struct {
-	Name   string
-	Size   int64
-	Reader io.Reader
-	Hash   string
-	Mode   int64
+	Name      string
+	Size      int64
+	Reader    io.Reader
+	Hash      string
+	Mode      int64
+	ForceZero bool
 }
 
 type BlockUploadResponse struct {
