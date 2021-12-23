@@ -18,9 +18,8 @@ func init() {
 }
 
 type CmdCat struct {
-	fileid        *string
-	maxSizeLimit  *int64
-	preventBinary *bool
+	fileid       *string
+	maxSizeLimit *int64
 }
 
 func (c *CmdCat) Name() string {
