@@ -7,9 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"tgblock/bot"
 	"tgblock/hasher"
-	"tgblock/locker"
 	"tgblock/protos/gen/tgblock"
 	"time"
 	"unicode"
@@ -17,22 +15,33 @@ import (
 	"github.com/google/uuid"
 )
 
-var tmpSave = "/tmp/"
-
 const (
 	defaultMiniFileLength = 512 //
 )
 
 type FileProcessor struct {
-	tgbot *bot.TGBotService
-	lcker locker.Locker
+	c *Config
 }
 
-func NewFileProcessor(tgbot *bot.TGBotService) *FileProcessor {
-	return &FileProcessor{
-		tgbot: tgbot,
-		lcker: locker.NewMemLocker(),
+func NewFileProcessor(opts ...Option) (*FileProcessor, error) {
+	c := &Config{}
+	for _, opt := range opts {
+		opt(c)
 	}
+	if c.fcache == nil || c.lcker == nil || c.tgbot == nil || len(c.tempdir) == 0 {
+		return nil, fmt.Errorf("invalid config")
+	}
+	dir := c.tempdir + "/fileupload"
+	if err := os.RemoveAll(dir); err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
+	c.tempdir = dir
+	return &FileProcessor{
+		c: c,
+	}, nil
 }
 
 func (p *FileProcessor) CreateFileUpload(ctx context.Context,
@@ -81,11 +90,11 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	if !p.isUploadIdValid(uploadid) {
 		return nil, fmt.Errorf("invalid upload id")
 	}
-	lcked := p.lcker.Lock(uploadid)
+	lcked := p.c.lcker.Lock(uploadid)
 	if !lcked {
 		return nil, fmt.Errorf("other process locked")
 	}
-	defer p.lcker.Unlock(uploadid)
+	defer p.c.lcker.Unlock(uploadid)
 	fc, err := p.readFromFile(uploadid)
 	if err != nil {
 		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
@@ -107,7 +116,7 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 		sum = reader.GetSum()
 		fc.ExtData = data
 	} else {
-		fileid, err = p.tgbot.Upload(ctx, partsize, reader)
+		fileid, err = p.c.tgbot.Upload(ctx, partsize, reader)
 		if err != nil {
 			return nil, fmt.Errorf("upload fail, err:%v", err)
 		}
@@ -143,11 +152,11 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 	if !p.isUploadIdValid(uploadid) {
 		return nil, fmt.Errorf("invalid upload id")
 	}
-	lcked := p.lcker.Lock(uploadid)
+	lcked := p.c.lcker.Lock(uploadid)
 	if !lcked {
 		return nil, fmt.Errorf("other process locked")
 	}
-	defer p.lcker.Unlock(uploadid)
+	defer p.c.lcker.Unlock(uploadid)
 	fc, err := p.readFromFile(uploadid)
 	if err != nil {
 		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
@@ -164,7 +173,7 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 		return nil, fmt.Errorf("check file ctx fail, err:%v", err)
 	}
 	data := FileContextToBytes(fc)
-	fileid, err := p.tgbot.Upload(ctx, int64(len(data)), bytes.NewReader(data))
+	fileid, err := p.c.tgbot.Upload(ctx, int64(len(data)), bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("finish upload fail, err:%v", err)
 	}
@@ -233,7 +242,15 @@ func (p *FileProcessor) removeFile(uploadid string) error {
 }
 
 func (p *FileProcessor) buildSavePath(uploadid string) string {
-	return tmpSave + uploadid
+	return p.c.tempdir + uploadid
+}
+
+func (p *FileProcessor) CacheGetFileMeta(ctx context.Context, fileid string) (*tgblock.FileContext, error) {
+	v, err := p.c.fcache.Get(ctx, fileid)
+	if err != nil {
+		return nil, err
+	}
+	return v.(*tgblock.FileContext), nil
 }
 
 func (p *FileProcessor) GetFileMeta(ctx context.Context, fileid string) (*tgblock.FileContext, error) {
@@ -262,5 +279,5 @@ func (p *FileProcessor) GetFileData(ctx context.Context, fileid string) ([]byte,
 }
 
 func (p *FileProcessor) DownloadFile(ctx context.Context, fileid string) (io.ReadCloser, error) {
-	return p.tgbot.Download(ctx, fileid)
+	return p.c.tgbot.Download(ctx, fileid)
 }

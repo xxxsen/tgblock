@@ -60,7 +60,7 @@ func newPartReader(sctx *module.ServiceContext, fileid string) *partReader {
 
 func (r *partReader) Read(buf []byte) (int, error) {
 	r.oce.Do(func() {
-		r.rc, r.err = r.sctx.Bot.Download(context.Background(), r.fileid)
+		r.rc, r.err = r.sctx.Processor.DownloadFile(context.Background(), r.fileid)
 	})
 	if r.err != nil {
 		return 0, r.err

@@ -39,7 +39,7 @@ func BlockUploadPart(sctx *module.ServiceContext, ctx *gin.Context, params inter
 		return http.StatusBadRequest, nil,
 			errs.NewAPIError(constants.ErrParams, "size == 0")
 	}
-	uploader := processor.NewFileProcessor(sctx.Bot)
+	uploader := sctx.Processor
 	_, err = uploader.PartFileUpload(ctx, &processor.PartFileUploadRequest{
 		UploadId:   uploadid,
 		HASH:       hash,

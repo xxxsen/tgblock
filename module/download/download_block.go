@@ -10,7 +10,6 @@ import (
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/module/models"
-	"tgblock/processor"
 	"tgblock/shortten"
 
 	"github.com/gin-gonic/gin"
@@ -25,8 +24,8 @@ func DownloadBlock(sctx *module.ServiceContext, ctx *gin.Context, params interfa
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnMarshal, "decode fileid fail", err)
 	}
-	proc := processor.NewFileProcessor(sctx.Bot)
-	meta, err := proc.GetFileMeta(ctx, fileid)
+	proc := sctx.Processor
+	meta, err := proc.CacheGetFileMeta(ctx, fileid)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "read file meta fail", err)
 	}

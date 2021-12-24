@@ -7,7 +7,6 @@ import (
 	"tgblock/module"
 	"tgblock/module/constants"
 	"tgblock/module/models"
-	"tgblock/processor"
 	"tgblock/shortten"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +21,8 @@ func GetFileInfo(sctx *module.ServiceContext, ctx *gin.Context, params interface
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.NewAPIError(constants.ErrUnMarshal, "decode fileid fail")
 	}
-	process := processor.NewFileProcessor(sctx.Bot)
-	meta, err := process.GetFileMeta(ctx, fileid)
+	process := sctx.Processor
+	meta, err := process.CacheGetFileMeta(ctx, fileid)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "get file meta fail", err)
 	}

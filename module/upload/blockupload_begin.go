@@ -19,7 +19,7 @@ func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params inte
 		req.FileSize > sctx.MaxFileSize {
 		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid params")
 	}
-	uploader := processor.NewFileProcessor(sctx.Bot)
+	uploader := sctx.Processor
 	begin, err := uploader.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
 		Name:      req.Name,
 		FileSize:  req.FileSize,

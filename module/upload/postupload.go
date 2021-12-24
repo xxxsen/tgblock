@@ -31,7 +31,7 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 		return http.StatusBadRequest, nil,
 			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("name too long, should less than:%d", constants.MaxFileName))
 	}
-	uploader := processor.NewFileProcessor(sctx.Bot)
+	uploader := sctx.Processor
 
 	begin, err := uploader.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
 		Name:      name,

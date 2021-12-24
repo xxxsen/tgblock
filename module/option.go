@@ -1,22 +1,24 @@
 package module
 
-import "tgblock/bot"
+import (
+	"tgblock/processor"
+)
 
 type ServiceContext struct {
-	Bot         *bot.TGBotService
 	MaxFileSize int64
 	BlockSize   int64
 	SecretId    string
 	SecretKey   string
 	Domain      string
 	Schema      string
+	Processor   *processor.FileProcessor
 }
 
 type Option func(c *ServiceContext)
 
-func WithBot(bot *bot.TGBotService) Option {
+func WithProcessor(proc *processor.FileProcessor) Option {
 	return func(c *ServiceContext) {
-		c.Bot = bot
+		c.Processor = proc
 	}
 }
 

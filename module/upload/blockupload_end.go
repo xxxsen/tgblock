@@ -17,7 +17,7 @@ func BlockUploadEnd(sctx *module.ServiceContext, ctx *gin.Context, params interf
 	if len(req.UploadId) == 0 {
 		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid upload id")
 	}
-	uploader := processor.NewFileProcessor(sctx.Bot)
+	uploader := sctx.Processor
 	finish, err := uploader.FinishFileUpload(ctx, &processor.FinishFileUploadRequest{
 		UploadId: req.UploadId,
 	})
