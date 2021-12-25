@@ -1,0 +1,26 @@
+FROM golang:1.15
+
+WORKDIR /build 
+COPY . ./ 
+RUN CGO_ENABLED=0 go build -a -tags netgo -ldflags '-w' -o tgblock_svr ./cmd/svr
+
+FROM alpine:3.12
+
+ENV LISTEN=:8444
+ENV TOKEN=
+ENV MAX_FILE_SIZE=2147483648
+ENV BLOCK_SIZE=20971520
+ENV CHATID=
+ENV LOG_LEVEL=trace
+ENV SECRETID=
+ENV SECRETKEY=
+ENV DOMAIN=127.0.0.1:8444
+ENV SCHEMA=http
+ENV CACHE_MEM_KEY_SIZE=10000
+ENV CACHE_FILE_KEY_SIZE=500000
+ENV TEMP_DIR=/tmp
+ENV GIN_MODE=release
+
+COPY --from=0 /build/tgblock_svr /bin/
+
+CMD ["/bin/tgblock_svr"]

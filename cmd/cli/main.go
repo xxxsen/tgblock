@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"runtime"
 	"tgblock/client"
 	"tgblock/command"
 )
@@ -28,7 +29,11 @@ func main() {
 
 	conf := os.Getenv("CMD_TGBLOCK_CLIENT_CONF")
 	if len(conf) == 0 {
-		conf = "/etc/tgblock/client.json"
+		if runtime.GOOS == "windows" {
+			conf = "c:\\tgblock\\client.json"
+		} else {
+			conf = "/etc/tgblock/client.json"
+		}
 	}
 	c, err := ParseFile(conf)
 	if err != nil {

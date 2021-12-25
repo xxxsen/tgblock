@@ -81,9 +81,9 @@ func (c *Client) buildRequest(method string, api string, codec codec.Encoder, in
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("secret_id", c.c.Secretkey)
-	req.Header.Set("secret_ts", fmt.Sprintf("%d", timestamp))
-	req.Header.Set("secret_sig", sig)
+	req.Header.Set(security.SigSecretId, c.c.Secretid)
+	req.Header.Set(security.SigSecretTs, fmt.Sprintf("%d", timestamp))
+	req.Header.Set(security.SigSecretSig, sig)
 	return req, nil
 }
 

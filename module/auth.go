@@ -32,13 +32,13 @@ func (a *secretAuth) Auth(sctx *ServiceContext, ctx *gin.Context) (bool, error) 
 		return true, nil
 	}
 
-	secid := ctx.GetHeader("secret_id")
-	sects := ctx.GetHeader("secret_ts")
-	secsig := ctx.GetHeader("secret_sig")
+	secid := ctx.GetHeader(security.SigSecretId)
+	sects := ctx.GetHeader(security.SigSecretTs)
+	secsig := ctx.GetHeader(security.SigSecretSig)
 
 	timestamp, err := strconv.ParseInt(sects, 10, 64)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("parse timestamp fail, err:%v", err)
 	}
 	if secid != sctx.SecretId {
 		return false, fmt.Errorf("secretid not match")

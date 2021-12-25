@@ -9,6 +9,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	SigSecretId  = "Secret-Id"
+	SigSecretTs  = "Secret-Ts"
+	SigSecretSig = "Secret-Sig"
+)
+
 func CreateSig(secretid string, key string, expireTimestamp int64) (string, error) {
 	sctx := &tgblock.SigContext{
 		SecretId:  secretid,
