@@ -18,5 +18,5 @@ func InitModule(router *gin.Engine) {
 	group.POST("/createshare", module.CodecWrap(CreateShare,
 		codec.DefaultJsonCodec, &models.CreateShareRequest{}, module.SecretAuth))
 	group.GET("/getshare", module.CodecWrap(GetShare,
-		codec.MakeCodec(codec.DefaultStreamCodec, codec.DefaultURLCodec), &models.GetShareRequest{}, module.SecretAuth))
+		codec.MakeCodec(codec.DefaultStreamCodec, codec.DefaultURLCodec), &models.GetShareRequest{}, module.NoAuth))
 }
