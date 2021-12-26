@@ -1,9 +1,10 @@
 package meta
 
 import (
-	codec "tgblock/coder/server"
-	"tgblock/module"
-	"tgblock/module/models"
+	codec "github.com/xxxsen/tgblock/coder/server"
+
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/models"
 
 	"github.com/gin-gonic/gin"
 )

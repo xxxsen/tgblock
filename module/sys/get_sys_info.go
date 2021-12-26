@@ -2,8 +2,9 @@ package sys
 
 import (
 	"net/http"
-	"tgblock/module"
-	"tgblock/module/models"
+
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/models"
 
 	"github.com/gin-gonic/gin"
 )

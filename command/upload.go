@@ -4,7 +4,8 @@ import (
 	"context"
 	"flag"
 	"log"
-	"tgblock/client"
+
+	"github.com/xxxsen/tgblock/client"
 )
 
 func init() {

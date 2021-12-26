@@ -3,14 +3,15 @@ package share
 import (
 	"encoding/base64"
 	"net/http"
-	"tgblock/coder/errs"
-	"tgblock/module"
-	"tgblock/module/constants"
-	"tgblock/module/download"
-	"tgblock/module/models"
-	"tgblock/protos/gen/tgblock"
-	"tgblock/security"
 	"time"
+
+	"github.com/xxxsen/tgblock/coder/errs"
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/constants"
+	"github.com/xxxsen/tgblock/module/download"
+	"github.com/xxxsen/tgblock/module/models"
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
+	"github.com/xxxsen/tgblock/security"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/proto"

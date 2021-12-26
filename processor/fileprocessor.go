@@ -7,10 +7,12 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"tgblock/hasher"
-	"tgblock/protos/gen/tgblock"
+
 	"time"
 	"unicode"
+
+	"github.com/xxxsen/tgblock/hasher"
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 
 	"github.com/google/uuid"
 )

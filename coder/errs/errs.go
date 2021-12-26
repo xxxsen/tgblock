@@ -2,7 +2,8 @@ package errs
 
 import (
 	"fmt"
-	"tgblock/module/constants"
+
+	"github.com/xxxsen/tgblock/module/constants"
 )
 
 type APIError struct {

@@ -11,11 +11,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	codec "tgblock/coder/client"
-	"tgblock/hasher"
-	"tgblock/module/models"
-	"tgblock/security"
 	"time"
+
+	codec "github.com/xxxsen/tgblock/coder/client"
+	"github.com/xxxsen/tgblock/hasher"
+	"github.com/xxxsen/tgblock/module/models"
+	"github.com/xxxsen/tgblock/security"
 )
 
 type Client struct {

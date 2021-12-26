@@ -3,11 +3,12 @@ package meta
 import (
 	"encoding/base64"
 	"net/http"
-	"tgblock/coder/errs"
-	"tgblock/module"
-	"tgblock/module/constants"
-	"tgblock/module/models"
-	"tgblock/shortten"
+
+	"github.com/xxxsen/tgblock/coder/errs"
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/constants"
+	"github.com/xxxsen/tgblock/module/models"
+	"github.com/xxxsen/tgblock/shortten"
 
 	"github.com/gin-gonic/gin"
 )

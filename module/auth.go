@@ -3,7 +3,8 @@ package module
 import (
 	"fmt"
 	"strconv"
-	"tgblock/security"
+
+	"github.com/xxxsen/tgblock/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxxsen/log"

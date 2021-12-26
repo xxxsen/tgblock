@@ -4,8 +4,10 @@ import (
 	"context"
 	"io"
 	"sync"
-	"tgblock/module"
-	"tgblock/protos/gen/tgblock"
+
+	"github.com/xxxsen/tgblock/module"
+
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 )
 
 type multiBlockReader struct {

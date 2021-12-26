@@ -1,8 +1,6 @@
 package module
 
-import (
-	"tgblock/processor"
-)
+import "github.com/xxxsen/tgblock/processor"
 
 type ServiceContext struct {
 	MaxFileSize int64

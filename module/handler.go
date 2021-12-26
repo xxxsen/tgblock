@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"reflect"
 
-	"tgblock/coder/errs"
-	"tgblock/coder/frame"
-	coder "tgblock/coder/server"
+	"github.com/xxxsen/tgblock/coder/errs"
+	"github.com/xxxsen/tgblock/coder/frame"
+
+	coder "github.com/xxxsen/tgblock/coder/server"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxxsen/log"

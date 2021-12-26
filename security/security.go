@@ -3,9 +3,9 @@ package security
 import (
 	"encoding/base64"
 	"fmt"
-	"tgblock/protos/gen/tgblock"
 	"time"
 
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 	"google.golang.org/protobuf/proto"
 )
 

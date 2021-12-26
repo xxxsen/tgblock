@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"tgblock/coder/errs"
-	"tgblock/module"
-	"tgblock/module/constants"
-	"tgblock/processor"
+
+	"github.com/xxxsen/tgblock/coder/errs"
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/constants"
+	"github.com/xxxsen/tgblock/processor"
 
 	"github.com/gin-gonic/gin"
 )

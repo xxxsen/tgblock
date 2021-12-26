@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"tgblock/coder/errs"
-	"tgblock/coder/frame"
+
+	"github.com/xxxsen/tgblock/coder/errs"
+	"github.com/xxxsen/tgblock/coder/frame"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,9 +4,10 @@ import (
 	"context"
 	"flag"
 	"log"
-	"tgblock/client"
-	"tgblock/module/models"
 	"time"
+
+	"github.com/xxxsen/tgblock/client"
+	"github.com/xxxsen/tgblock/module/models"
 )
 
 func init() {

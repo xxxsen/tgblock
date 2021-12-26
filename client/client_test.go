@@ -6,8 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
-	"tgblock/hasher"
-	"tgblock/module/models"
+
+	"github.com/xxxsen/tgblock/hasher"
+	"github.com/xxxsen/tgblock/module/models"
 
 	"github.com/stretchr/testify/assert"
 )

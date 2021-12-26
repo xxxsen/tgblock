@@ -6,8 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"tgblock/client"
-	"tgblock/module/models"
+
+	"github.com/xxxsen/tgblock/client"
+	"github.com/xxxsen/tgblock/module/models"
 )
 
 func init() {

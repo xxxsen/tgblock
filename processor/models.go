@@ -2,8 +2,8 @@ package processor
 
 import (
 	"io"
-	"tgblock/protos/gen/tgblock"
 
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 	"google.golang.org/protobuf/proto"
 )
 

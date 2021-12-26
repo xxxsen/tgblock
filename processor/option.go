@@ -1,9 +1,9 @@
 package processor
 
 import (
-	"tgblock/bot"
-	"tgblock/cache"
-	"tgblock/locker"
+	"github.com/xxxsen/tgblock/bot"
+	"github.com/xxxsen/tgblock/cache"
+	"github.com/xxxsen/tgblock/locker"
 )
 
 type Config struct {

@@ -6,8 +6,9 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"tgblock/client"
-	"tgblock/command"
+
+	"github.com/xxxsen/tgblock/client"
+	"github.com/xxxsen/tgblock/command"
 )
 
 func main() {

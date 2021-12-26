@@ -4,7 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"tgblock/client"
+
+	"github.com/xxxsen/tgblock/client"
 )
 
 type Command interface {

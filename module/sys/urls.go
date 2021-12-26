@@ -1,9 +1,10 @@
 package sys
 
 import (
-	codec "tgblock/coder/server"
-	"tgblock/module"
-	"tgblock/module/models"
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/models"
+
+	codec "github.com/xxxsen/tgblock/coder/server"
 
 	"github.com/gin-gonic/gin"
 )

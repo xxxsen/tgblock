@@ -1,10 +1,10 @@
 package share
 
 import (
-	"tgblock/module"
-	"tgblock/module/models"
+	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/module/models"
 
-	codec "tgblock/coder/server"
+	codec "github.com/xxxsen/tgblock/coder/server"
 
 	"github.com/gin-gonic/gin"
 )

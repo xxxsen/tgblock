@@ -1,4 +1,4 @@
-module tgblock
+module github.com/xxxsen/tgblock
 
 go 1.15
 

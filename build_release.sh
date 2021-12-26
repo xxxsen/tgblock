@@ -19,7 +19,7 @@ function build {
     cli="${output}/tgblock_cli_${nameext}"
     tarfile="${output}/tgblock_${name}.tar.xz"
     CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -a -tags netgo -ldflags '-w' -o ${svr} ./cmd/svr
-    CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -a -tags netgo -ldflags '-w' -o ${cli} ./cmd/svr
+    CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -a -tags netgo -ldflags '-w' -o ${cli} ./cmd/cli
     tar -cJf ${tarfile} ${svr} ${cli}
     rm ${svr} ${cli}
 }
