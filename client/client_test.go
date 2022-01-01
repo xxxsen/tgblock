@@ -59,19 +59,6 @@ func TestDownload(t *testing.T) {
 	t.Logf("data:%+v", string(data))
 }
 
-func TestDownloadBlock(t *testing.T) {
-	client := getClient()
-	rsp, err := client.DownloadBlock(context.Background(), &models.DownloadBlockRequest{
-		FileId:     testFileId,
-		BlockIndex: 0,
-	})
-	assert.NoError(t, err)
-	defer rsp.Close()
-	data, err := ioutil.ReadAll(rsp)
-	assert.NoError(t, err)
-	t.Logf("data:%+v", string(data))
-}
-
 func TestGetFileInfo(t *testing.T) {
 	client := getClient()
 	rsp, err := client.GetFileInfo(context.Background(), &models.GetFileInfoRequest{

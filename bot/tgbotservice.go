@@ -106,19 +106,37 @@ func (s *TGBotService) cacheGetURL(ctx context.Context, hash string) (string, er
 }
 
 func (s *TGBotService) Download(ctx context.Context, hash string) (io.ReadCloser, error) {
+	return s.DownloadAt(ctx, hash, 0)
+}
+
+func (s *TGBotService) DownloadAt(ctx context.Context, hash string, index int64) (io.ReadCloser, error) {
 	lnk, err := s.cacheGetURL(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("read hash:%s, link:%s", hash, lnk)
-	rsp, err := s.client.Get(lnk)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, lnk, nil)
+	if err != nil {
+		return nil, err
+	}
+	if index != 0 {
+		rangeHeader := fmt.Sprintf("bytes=%d-", index)
+		req.Header.Set("Range", rangeHeader)
+	}
+	rsp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	//caller should close rsp.Body
-	if rsp.StatusCode != http.StatusOK {
+	if rsp.StatusCode/100 != 2 {
 		rsp.Body.Close()
 		return nil, fmt.Errorf("status code not ok, code:%d", rsp.StatusCode)
 	}
+	if index != 0 && len(rsp.Header.Get("Content-Range")) == 0 {
+		rsp.Body.Close()
+		return nil, fmt.Errorf("not support range")
+	}
+
 	return rsp.Body, nil
 }

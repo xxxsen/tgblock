@@ -121,16 +121,6 @@ func (c *Client) GetFileInfo(ctx context.Context, request *models.GetFileInfoReq
 	return rsp, nil
 }
 
-func (c *Client) DownloadBlock(ctx context.Context, request *models.DownloadBlockRequest) (io.ReadCloser, error) {
-	var rc io.ReadCloser
-	codec := codec.MakeCodec(codec.DefaultURLCodec, codec.DefaultStreamCodec)
-
-	if err := c.call(http.MethodGet, apiDownloadBlock, codec, request, &rc); err != nil {
-		return nil, err
-	}
-	return rc, nil
-}
-
 func (c *Client) DownloadFile(ctx context.Context, request *models.DownloadFileRequest) (io.ReadCloser, error) {
 	var rc io.ReadCloser
 

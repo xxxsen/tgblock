@@ -16,6 +16,4 @@ func InitModule(router *gin.Engine) {
 	group := router.Group("/api/download")
 	group.GET("/file", module.CodecWrap(DownloadFile,
 		codec.MakeCodec(codec.DefaultStreamCodec, codec.DefaultURLCodec), &models.DownloadFileRequest{}, module.SecretAuth))
-	group.GET("/block", module.CodecWrap(DownloadBlock,
-		codec.MakeCodec(codec.DefaultStreamCodec, codec.DefaultURLCodec), &models.DownloadBlockRequest{}, module.SecretAuth))
 }

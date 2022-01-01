@@ -1,83 +1,208 @@
 package download
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"sync"
 
+	"github.com/gin-gonic/gin"
+	"github.com/xxxsen/log"
 	"github.com/xxxsen/tgblock/module"
+	"github.com/xxxsen/tgblock/utils"
 
 	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 )
 
-type multiBlockReader struct {
-	meta       *tgblock.FileContext
-	sctx       *module.ServiceContext
-	reader     io.Reader
-	readerlist []*partReader
+type ReadSeekCloser interface {
+	io.Reader
+	io.Closer
+	io.Seeker
 }
 
-func newMultiBlockReader(sctx *module.ServiceContext, meta *tgblock.FileContext) *multiBlockReader {
-	mr := &multiBlockReader{
+type simpleFileCtx struct {
+	*bytes.Reader
+}
+
+func (c *simpleFileCtx) Close() error {
+	return nil
+}
+
+type FileContextReadSeeker struct {
+	ctx       *gin.Context
+	meta      *tgblock.FileContext
+	sctx      *module.ServiceContext
+	reader    io.ReadCloser
+	blockId   int64
+	readIndex int64
+}
+
+func NewFileContextReadSeeker(ctx *gin.Context, sctx *module.ServiceContext, meta *tgblock.FileContext) ReadSeekCloser {
+	if meta.ForceZero || len(meta.ExtData) > 0 {
+		return &simpleFileCtx{Reader: bytes.NewReader(meta.ExtData)}
+	}
+
+	return &FileContextReadSeeker{
+		ctx:  ctx,
 		sctx: sctx,
 		meta: meta,
 	}
-	var readers []io.Reader
-	for _, item := range meta.FileList {
-		reader := newPartReader(sctx, item.FileId)
-		mr.readerlist = append(mr.readerlist, reader)
-		readers = append(readers, reader)
+}
+
+func (f *FileContextReadSeeker) switchNextBlock() error {
+	err := f.resetReader()
+	if err != nil {
+		return err
 	}
-	mr.reader = io.MultiReader(readers...)
-	return mr
-}
-
-func (r *multiBlockReader) Read(buf []byte) (int, error) {
-	return r.reader.Read(buf)
-}
-
-func (r *multiBlockReader) Close() error {
-	var err error
-	for _, item := range r.readerlist {
-		if e := item.Close(); e != nil {
-			err = e
-		}
+	f.blockId++
+	if f.blockId == f.meta.BlockCount {
+		return io.EOF
 	}
-	return err
-}
-
-type partReader struct {
-	sctx   *module.ServiceContext
-	fileid string
-	oce    sync.Once
-	err    error
-	rc     io.ReadCloser
-}
-
-func newPartReader(sctx *module.ServiceContext, fileid string) *partReader {
-	return &partReader{
-		sctx: sctx, fileid: fileid,
+	reader, err := f.blockIdIndexToReader(f.blockId, 0)
+	if err != nil {
+		return err
 	}
+	f.reader = reader
+	return nil
 }
 
-func (r *partReader) Read(buf []byte) (int, error) {
-	r.oce.Do(func() {
-		r.rc, r.err = r.sctx.Processor.DownloadFile(context.Background(), r.fileid)
-	})
-	if r.err != nil {
-		return 0, r.err
-	}
-	cnt, err := r.rc.Read(buf)
+func (f *FileContextReadSeeker) Read(buf []byte) (int, error) {
+	cnt, err := f.reader.Read(buf)
 	if err == io.EOF {
-		r.rc.Close()
-		r.rc = nil
+		err = f.switchNextBlock()
+	}
+	if cnt > 0 {
+		f.readIndex += int64(cnt)
 	}
 	return cnt, err
 }
 
-func (r *partReader) Close() error {
-	if r.rc != nil {
-		return r.rc.Close()
+func (f *FileContextReadSeeker) resetReader() error {
+	if f.reader != nil {
+		return f.reader.Close()
 	}
 	return nil
+}
+
+func (f *FileContextReadSeeker) Close() error {
+	f.blockId = 0
+	f.readIndex = 0
+	return f.resetReader()
+}
+
+func (f *FileContextReadSeeker) blockIdIndexToReader(blockid int64, readindex int64) (*FileContextBlockReadSeeker, error) {
+	fileid := f.meta.FileList[blockid].GetFileId()
+	fullsize, err := utils.CalcBlockSizeByIndex(f.meta, blockid)
+	if err != nil {
+		return nil, err
+	}
+	reader := NewFileContextBlockReader(f.ctx, f.sctx, fileid, fullsize)
+	if readindex != 0 {
+		_, err = reader.Seek(readindex, io.SeekStart)
+		if err != nil {
+			reader.Close()
+			return nil, err
+		}
+	}
+	return reader, nil
+}
+
+func (f *FileContextReadSeeker) Seek(offset int64, whence int) (int64, error) {
+	if err := f.resetReader(); err != nil {
+		return 0, err
+	}
+
+	//TODO:next start 计算错误
+	nextStart, err := utils.CalcSeek(f.meta.FileSize, f.readIndex, offset, whence)
+	if err != nil {
+		return 0, err
+	}
+	blockid, readindex, err := utils.ReadIndexToBlockIndexOffset(f.meta, nextStart)
+	if err != nil {
+		return 0, err
+	}
+	reader, err := f.blockIdIndexToReader(blockid, readindex)
+	if err != nil {
+		return 0, err
+	}
+	f.reader = reader
+	f.blockId = blockid
+	f.readIndex = nextStart
+	log.Debugf("file seek, hash:%s, blockid:%d, final readindex:%d, nextstart:%d", f.meta.FileHash, f.blockId, f.readIndex, nextStart)
+	return f.readIndex, nil
+}
+
+type FileContextBlockReadSeeker struct {
+	ctx       *gin.Context
+	sctx      *module.ServiceContext
+	fileid    string
+	reader    io.ReadCloser
+	fullSize  int64
+	readIndex int64
+}
+
+func NewFileContextBlockReader(ctx *gin.Context, sctx *module.ServiceContext, fileid string, fullsize int64) *FileContextBlockReadSeeker {
+	return &FileContextBlockReadSeeker{
+		ctx:      ctx,
+		sctx:     sctx,
+		fileid:   fileid,
+		fullSize: fullsize,
+	}
+}
+
+func (f *FileContextBlockReadSeeker) tryOpenStream() error {
+	if f.reader != nil {
+		return nil
+	}
+	rc, err := f.sctx.Processor.DownloadFileAt(context.Background(), f.fileid, f.readIndex)
+	log.Debugf("fileid:%s, open stream at loc:%d, err:%v", f.fileid, f.readIndex, err)
+	if err != nil {
+		return err
+	}
+	f.reader = rc
+	return nil
+}
+
+func (f *FileContextBlockReadSeeker) Read(buf []byte) (int, error) {
+	if err := f.tryOpenStream(); err != nil {
+		return 0, fmt.Errorf("open stream at index:%d fail, err:%v", f.readIndex, err)
+	}
+	cnt, err := f.reader.Read(buf)
+	if cnt > 0 {
+		f.readIndex += int64(cnt)
+	}
+	if err == io.EOF {
+		e := f.resetReader()
+		if e != nil {
+			err = e
+		}
+	}
+	return cnt, err
+}
+
+func (f *FileContextBlockReadSeeker) resetReader() error {
+	var err error
+	if f.reader != nil {
+		err = f.reader.Close()
+		f.reader = nil
+	}
+	return err
+}
+
+func (f *FileContextBlockReadSeeker) Close() error {
+	f.readIndex = 0
+	return f.resetReader()
+}
+
+func (f *FileContextBlockReadSeeker) Seek(offset int64, whence int) (int64, error) {
+	if err := f.resetReader(); err != nil {
+		return 0, err
+	}
+	nextStart, err := utils.CalcSeek(f.fullSize, f.readIndex, offset, whence)
+	log.Debugf("fileid:%s, reset index from:%d to:%d", f.fileid, f.readIndex, nextStart)
+	if err != nil {
+		return 0, err
+	}
+	f.readIndex = nextStart
+	return 0, nil
 }

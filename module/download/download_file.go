@@ -1,11 +1,9 @@
 package download
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
 	"net/http"
 
+	"github.com/xxxsen/log"
 	codec "github.com/xxxsen/tgblock/coder/server"
 
 	"github.com/xxxsen/tgblock/coder/errs"
@@ -31,20 +29,16 @@ func DownloadFile(sctx *module.ServiceContext, ctx *gin.Context, params interfac
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "read file meta fail", err)
 	}
-	var rc io.ReadCloser
-	if meta.ForceZero {
-		rc = http.NoBody
-	} else if len(meta.ExtData) > 0 {
-		rc = ioutil.NopCloser(bytes.NewReader(meta.ExtData))
-	} else {
-		rc = newMultiBlockReader(sctx, meta)
-	}
-
+	fctxReader := NewFileContextReadSeeker(ctx, sctx, meta)
 	//write download info
 	output := &codec.StreamInfo{
-		Stream: rc,
-		Size:   meta.FileSize,
+		Stream: fctxReader,
 		Name:   meta.Name,
+		Mtime:  meta.CreateTime,
+		DeferFunc: func() {
+			err := fctxReader.Close()
+			log.Debugf("fileid:%s read stream finish, close it, err:%v", fileid, err)
+		},
 	}
 	return http.StatusOK, output, nil
 }

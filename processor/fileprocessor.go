@@ -281,5 +281,9 @@ func (p *FileProcessor) GetFileData(ctx context.Context, fileid string) ([]byte,
 }
 
 func (p *FileProcessor) DownloadFile(ctx context.Context, fileid string) (io.ReadCloser, error) {
-	return p.c.tgbot.Download(ctx, fileid)
+	return p.c.tgbot.DownloadAt(ctx, fileid, 0)
+}
+
+func (p *FileProcessor) DownloadFileAt(ctx context.Context, fileid string, index int64) (io.ReadCloser, error) {
+	return p.c.tgbot.DownloadAt(ctx, fileid, index)
 }
