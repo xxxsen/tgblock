@@ -29,7 +29,10 @@ func DownloadFile(sctx *module.ServiceContext, ctx *gin.Context, params interfac
 	if err != nil {
 		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "read file meta fail", err)
 	}
-	fctxReader := NewFileContextReadSeeker(ctx, sctx, meta)
+	fctxReader, err := NewFileContextReadSeeker(ctx, sctx, meta)
+	if err != nil {
+		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrIO, "open stream fail", err)
+	}
 	//write download info
 	output := &codec.StreamInfo{
 		Stream: fctxReader,

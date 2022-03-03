@@ -11,7 +11,7 @@ require (
 	github.com/hnlq715/golang-lru v0.3.0
 	github.com/stretchr/testify v1.7.0
 	github.com/technoweenie/multipartstreamer v1.0.1
-	github.com/xxxsen/envflag v0.0.1
+	github.com/xxxsen/envflag v0.0.2
 	github.com/xxxsen/log v0.0.2
 	google.golang.org/protobuf v1.26.0
 )

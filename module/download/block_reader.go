@@ -37,16 +37,21 @@ type FileContextReadSeeker struct {
 	readIndex int64
 }
 
-func NewFileContextReadSeeker(ctx *gin.Context, sctx *module.ServiceContext, meta *tgblock.FileContext) ReadSeekCloser {
+func NewFileContextReadSeeker(ctx *gin.Context, sctx *module.ServiceContext, meta *tgblock.FileContext) (ReadSeekCloser, error) {
 	if meta.ForceZero || len(meta.ExtData) > 0 {
-		return &simpleFileCtx{Reader: bytes.NewReader(meta.ExtData)}
+		return &simpleFileCtx{Reader: bytes.NewReader(meta.ExtData)}, nil
 	}
 
-	return &FileContextReadSeeker{
+	rs := &FileContextReadSeeker{
 		ctx:  ctx,
 		sctx: sctx,
 		meta: meta,
 	}
+	_, err := rs.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, err
+	}
+	return rs, nil
 }
 
 func (f *FileContextReadSeeker) switchNextBlock() error {
@@ -112,7 +117,6 @@ func (f *FileContextReadSeeker) Seek(offset int64, whence int) (int64, error) {
 		return 0, err
 	}
 
-	//TODO:next start 计算错误
 	nextStart, err := utils.CalcSeek(f.meta.FileSize, f.readIndex, offset, whence)
 	if err != nil {
 		return 0, err
