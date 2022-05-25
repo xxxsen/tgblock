@@ -8,12 +8,7 @@ import (
 )
 
 type CreateFileUploadRequest struct {
-	Name      string
-	FileSize  int64
-	HASH      string
-	BlockSize int64
-	FileMode  int64
-	ForceZero bool
+	FileSize int64
 }
 
 type CreateFileUploadResponse struct {
@@ -21,29 +16,34 @@ type CreateFileUploadResponse struct {
 }
 
 type PartFileUploadRequest struct {
-	UploadId   string
-	Reader     io.Reader
-	PartSize   int64
-	HASH       string
-	BlockIndex int64
+	UploadId string
+	Reader   io.Reader
+	PartSize int64
 }
 
 type PartFileUploadResponse struct {
-	Hash string
+	FileId    string
+	Hash      string
+	TagId     uint32
+	BlockSize int64
+}
+
+type FileBlock struct {
+	FileId    string
+	Hash      string
+	TagId     uint32
+	BlockSize int64
 }
 
 type FinishFileUploadRequest struct {
-	UploadId string
+	UploadId   string
+	FileName   string
+	FileIdList []FileBlock
 }
 
 type FinishFileUploadResponse struct {
-	FileId     string
-	CreateTime int64
-	FinishTime int64
-	Size       int64
-	Hash       string
-	BlockSize  int64
-	BlockCount int64
+	FileId string
+	Hash   string
 }
 
 func FileContextToBytes(fc *tgblock.FileContext) []byte {

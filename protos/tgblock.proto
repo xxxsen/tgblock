@@ -2,31 +2,26 @@ syntax = "proto3";
 
 option go_package = "gen/tgblock";
 
-message FilePart {
-    string file_id = 1; //
-    string hash = 2; //
+enum FileType {
+    FileType_Index = 0; //
+    FileType_Data = 1; //
+}
+
+message UploadIdContext {
+    int64 rand_id = 1; //
+    int64 timestamp = 2; //
+    int64 file_size = 3; //
 }
 
 message FileContext {
     string name = 1; //
     int64 file_size = 2; //
     string file_hash = 3; //
-    int64 block_count = 4; //
-    int64 block_size = 5; //
-    int64 create_time = 6; //
-    int64 finish_time = 7; //
-    repeated FilePart file_list = 8; //
-    int64 file_mode = 9; //
-    bytes ext_data = 10; //对于低于一定长度的数据直接将数据保存在filectx中
-    bool force_zero = 11; //
+    int64 create_time = 4; //
+    repeated string file_ids = 5; //
 }
 
-message SigContext {
-    string secret_id = 1; //
-    int64 timestamp = 2;//
-}
-
-message ShareBlock {
-    bytes fileid = 1; //
-    int64 timestamp = 2; //
+message FileIdContext {
+    int32 file_type = 1; //refer: FileType
+    string file_id = 2; //
 }

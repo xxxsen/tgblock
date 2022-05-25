@@ -12,17 +12,10 @@ func TestCalcBlockSizeByIndex(t *testing.T) {
 	var blockCount int64 = 6
 	var extSize int64 = 1 * 1024 * 1024
 	meta := &tgblock.FileContext{
-		Name:       "abc",
-		FileSize:   int64(blockSize*(blockCount-1) + extSize), //101MB
-		FileHash:   "abc",
-		BlockCount: int64(blockCount),
-		BlockSize:  int64(blockSize),
-		CreateTime: 123,
-		FinishTime: 2345,
-		FileList:   []*tgblock.FilePart{},
-		FileMode:   0,
-		ExtData:    []byte{},
-		ForceZero:  false,
+		Name:     "abc",
+		FileSize: int64(blockSize*(blockCount-1) + extSize), //101MB
+		FileHash: "abc",
+		FileIds:  []string{"1", "2", "3", "4", "5", "6"},
 	}
 	{
 		cnt, err := CalcBlockSizeByIndex(meta, 0)

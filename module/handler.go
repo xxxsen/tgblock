@@ -24,21 +24,8 @@ func newInst(params interface{}) interface{} {
 	return v.Interface()
 }
 
-func doAuth(auth CommonAuth, sctx *ServiceContext, gctx *gin.Context) bool {
-	ok, err := auth.Auth(sctx, gctx)
-	if err != nil {
-		log.Errorf("url:%s, auth fail, err:%v", gctx.Request.URL.Path, err)
-		return false
-	}
-	return ok
-}
-
-func CodecWrap(handler CGIHandler, codec coder.Codec, params interface{}, auth CommonAuth) gin.HandlerFunc {
+func CodecWrap(handler CGIHandler, codec coder.Codec, params interface{}) gin.HandlerFunc {
 	return func(gctx *gin.Context) {
-		if !doAuth(auth, defaultCtx, gctx) {
-			gctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
 		inst := newInst(params)
 		if inst != nil {
 			if err := codec.Decode(gctx, inst); err != nil {

@@ -1,7 +1,6 @@
 package download
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -20,14 +19,6 @@ type ReadSeekCloser interface {
 	io.Seeker
 }
 
-type simpleFileCtx struct {
-	*bytes.Reader
-}
-
-func (c *simpleFileCtx) Close() error {
-	return nil
-}
-
 type FileContextReadSeeker struct {
 	ctx       *gin.Context
 	meta      *tgblock.FileContext
@@ -38,10 +29,6 @@ type FileContextReadSeeker struct {
 }
 
 func NewFileContextReadSeeker(ctx *gin.Context, sctx *module.ServiceContext, meta *tgblock.FileContext) (ReadSeekCloser, error) {
-	if meta.ForceZero || len(meta.ExtData) > 0 {
-		return &simpleFileCtx{Reader: bytes.NewReader(meta.ExtData)}, nil
-	}
-
 	rs := &FileContextReadSeeker{
 		ctx:  ctx,
 		sctx: sctx,
@@ -60,7 +47,7 @@ func (f *FileContextReadSeeker) switchNextBlock() error {
 		return err
 	}
 	f.blockId++
-	if f.blockId == f.meta.BlockCount {
+	if f.blockId == int64(len(f.meta.FileIds)) {
 		return io.EOF
 	}
 	reader, err := f.blockIdIndexToReader(f.blockId, 0)
@@ -96,7 +83,7 @@ func (f *FileContextReadSeeker) Close() error {
 }
 
 func (f *FileContextReadSeeker) blockIdIndexToReader(blockid int64, readindex int64) (*FileContextBlockReadSeeker, error) {
-	fileid := f.meta.FileList[blockid].GetFileId()
+	fileid := f.meta.FileIds[blockid]
 	fullsize, err := utils.CalcBlockSizeByIndex(f.meta, blockid)
 	if err != nil {
 		return nil, err

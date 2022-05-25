@@ -7,8 +7,10 @@ const (
 	ErrMarshal   = 100002
 	ErrUnMarshal = 100003
 	ErrIO        = 100004
+	ErrLock      = 100005
 )
 
 const (
-	MaxFileName = 1024
+	MaxFileNameLen = 1024
+	BlockSize      = 20 * 1024 * 1024
 )

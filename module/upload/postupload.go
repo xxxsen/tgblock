@@ -9,8 +9,7 @@ import (
 	"github.com/xxxsen/tgblock/module/constants"
 	"github.com/xxxsen/tgblock/module/models"
 	"github.com/xxxsen/tgblock/processor"
-
-	"github.com/xxxsen/tgblock/shortten"
+	"github.com/xxxsen/tgblock/protos/gen/tgblock"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,23 +24,16 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 		name = header.Filename
 		size = header.Size
 	)
-	if size > sctx.BlockSize {
+	if size > constants.BlockSize {
 		return http.StatusBadRequest, nil,
-			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("size exceed, should less than:%d", sctx.BlockSize))
-	}
-	if len(name) > constants.MaxFileName {
-		return http.StatusBadRequest, nil,
-			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("name too long, should less than:%d", constants.MaxFileName))
+			errs.NewAPIError(constants.ErrParams, fmt.Sprintf("size exceed, should less than:%d", constants.BlockSize))
 	}
 	uploader := sctx.Processor
-
 	begin, err := uploader.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
-		Name:      name,
-		FileSize:  size,
-		BlockSize: sctx.BlockSize,
+		FileSize: size,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "create upload fail", err)
+		return http.StatusOK, nil, err
 	}
 	part, err := uploader.PartFileUpload(ctx, &processor.PartFileUploadRequest{
 		UploadId: begin.UploadId,
@@ -49,21 +41,30 @@ func PostUpload(sctx *module.ServiceContext, ctx *gin.Context, params interface{
 		PartSize: size,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "upload part fail", err)
+		return http.StatusOK, nil, err
 	}
 	finish, err := uploader.FinishFileUpload(ctx, &processor.FinishFileUploadRequest{
 		UploadId: begin.UploadId,
+		FileName: name,
+		FileIdList: []processor.FileBlock{
+			{
+				FileId:    part.FileId,
+				Hash:      part.Hash,
+				TagId:     part.TagId,
+				BlockSize: part.BlockSize,
+			},
+		},
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "finish upload failed", err)
+		return http.StatusOK, nil, err
 	}
-	fileid, err := shortten.Encode(ctx, finish.FileId)
+	encfileid, err := uploader.EncryptFileId(finish.FileId, int32(tgblock.FileType_FileType_Index))
 	if err != nil {
-		return http.StatusInternalServerError, nil, errs.NewAPIError(constants.ErrMarshal, "encode fileid fail")
+		return http.StatusOK, nil, err
 	}
 	return http.StatusOK, &models.PostUploadResponse{
-		FileId: fileid,
-		Hash:   part.Hash,
+		FileId: encfileid,
+		Hash:   finish.Hash,
 		Size:   size,
 	}, nil
 }

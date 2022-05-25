@@ -1,6 +1,7 @@
 package upload
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/xxxsen/tgblock/coder/errs"
@@ -14,25 +15,18 @@ import (
 
 func BlockUploadBegin(sctx *module.ServiceContext, ctx *gin.Context, params interface{}) (int, interface{}, error) {
 	req := params.(*models.BlockUploadBeginRequest)
-	if len(req.Hash) == 0 ||
-		len(req.Hash) > 128 || len(req.Name) == 0 ||
-		len(req.Name) > 1024 || (req.FileSize == 0 && !req.ForceZero) ||
-		req.FileSize > sctx.MaxFileSize {
-		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, "invalid params")
+
+	if req.FileSize == 0 || req.FileSize > sctx.MaxFileSize {
+		return http.StatusBadRequest, nil, errs.NewAPIError(constants.ErrParams, fmt.Sprintf("size invalid, max:%d", sctx.MaxFileSize))
 	}
-	uploader := sctx.Processor
-	begin, err := uploader.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
-		Name:      req.Name,
-		FileSize:  req.FileSize,
-		BlockSize: sctx.BlockSize,
-		HASH:      req.Hash,
-		FileMode:  req.FileMode,
-		ForceZero: req.ForceZero,
+	proc := sctx.Processor
+	rsp, err := proc.CreateFileUpload(ctx, &processor.CreateFileUploadRequest{
+		FileSize: req.FileSize,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, nil, errs.WrapError(constants.ErrUnknown, "call create upload fail", err)
+		return http.StatusBadGateway, nil, errs.WrapError(constants.ErrUnknown, "create upload fail", err)
 	}
 	return http.StatusOK, &models.BlockUploadBeginResponse{
-		UploadId: begin.UploadId,
+		UploadId: rsp.UploadId,
 	}, nil
 }

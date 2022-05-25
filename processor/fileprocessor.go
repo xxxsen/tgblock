@@ -3,22 +3,23 @@ package processor
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"io/ioutil"
-	"os"
+	"math/rand"
 
 	"time"
-	"unicode"
 
+	"github.com/xxxsen/tgblock/coder/errs"
 	"github.com/xxxsen/tgblock/hasher"
+	"github.com/xxxsen/tgblock/module/constants"
 	"github.com/xxxsen/tgblock/protos/gen/tgblock"
-
-	"github.com/google/uuid"
-)
-
-const (
-	defaultMiniFileLength = 512 //
+	"github.com/xxxsen/tgblock/security"
+	"google.golang.org/protobuf/proto"
 )
 
 type FileProcessor struct {
@@ -30,17 +31,9 @@ func NewFileProcessor(opts ...Option) (*FileProcessor, error) {
 	for _, opt := range opts {
 		opt(c)
 	}
-	if c.fcache == nil || c.lcker == nil || c.tgbot == nil || len(c.tempdir) == 0 {
+	if c.fcache == nil || c.lcker == nil || c.tgbot == nil || len(c.seckey) == 0 {
 		return nil, fmt.Errorf("invalid config")
 	}
-	dir := c.tempdir + "/fileupload"
-	if err := os.RemoveAll(dir); err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, err
-	}
-	c.tempdir = dir
 	return &FileProcessor{
 		c: c,
 	}, nil
@@ -48,35 +41,55 @@ func NewFileProcessor(opts ...Option) (*FileProcessor, error) {
 
 func (p *FileProcessor) CreateFileUpload(ctx context.Context,
 	req *CreateFileUploadRequest) (*CreateFileUploadResponse, error) {
-
-	if len(req.HASH) > 128 || len(req.Name) == 0 ||
-		len(req.Name) > 1024 || req.BlockSize == 0 || (req.FileSize == 0 && !req.ForceZero) {
-
-		return nil, fmt.Errorf("invalid params")
-	}
-	if req.FileMode == 0 {
-		req.FileMode = 0755
-	}
-	fileid := uuid.NewString()
-	fctx := &tgblock.FileContext{
-		Name:       req.Name,
-		FileSize:   req.FileSize,
-		FileHash:   req.HASH,
-		BlockSize:  req.BlockSize,
-		BlockCount: req.FileSize / req.BlockSize,
-		CreateTime: time.Now().Unix(),
-		FileMode:   req.FileMode,
-		ForceZero:  req.ForceZero,
-	}
-	if req.FileSize%req.BlockSize != 0 {
-		fctx.BlockCount += 1
-	}
-	if err := p.writeToFile(fileid, fctx); err != nil {
-		return nil, fmt.Errorf("write ctx to file fail, err:%v", err)
+	fileid, err := p.CreateUploadId(req.FileSize)
+	if err != nil {
+		return nil, fmt.Errorf("create upload id fail, err:%v", err)
 	}
 	return &CreateFileUploadResponse{
 		UploadId: fileid,
 	}, nil
+}
+
+func (p *FileProcessor) CreateUploadId(filesize int64) (string, error) {
+	idblk := &tgblock.UploadIdContext{
+		RandId:    rand.Int63(),
+		Timestamp: time.Now().Unix(),
+		FileSize:  filesize,
+	}
+	raw, err := proto.Marshal(idblk)
+	if err != nil {
+		return "", fmt.Errorf("encode id fail, err:%v", err)
+	}
+	out, err := security.EncryptByKey32(p.c.seckey, raw)
+	if err != nil {
+		return "", fmt.Errorf("encrypt id fail, err:%v", err)
+	}
+	return hex.EncodeToString(out), nil
+}
+
+func (p *FileProcessor) DecodeUploadId(id string) (*tgblock.UploadIdContext, error) {
+	raw, err := hex.DecodeString(id)
+	if err != nil {
+		return nil, fmt.Errorf("decode id fail, err:%v", err)
+	}
+	out, err := security.DecryptByKey32(p.c.seckey, raw)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt id fail, err:%v", err)
+	}
+	blk := &tgblock.UploadIdContext{}
+	if err := proto.Unmarshal(out, blk); err != nil {
+		return nil, fmt.Errorf("unmarshal blk fail, err:%v", err)
+	}
+	return blk, nil
+}
+
+func (p *FileProcessor) BuildTagId(idblk *tgblock.UploadIdContext, fileid string, hash string, size int64) uint32 {
+	crc := crc32.NewIEEE()
+	crc.Write([]byte(fmt.Sprintf("%d", idblk.RandId)))
+	crc.Write([]byte(hash))
+	crc.Write([]byte(fileid))
+	crc.Write([]byte(fmt.Sprintf("%d", size)))
+	return crc.Sum32()
 }
 
 func (p *FileProcessor) PartFileUpload(ctx context.Context,
@@ -85,64 +98,73 @@ func (p *FileProcessor) PartFileUpload(ctx context.Context,
 	var (
 		uploadid = req.UploadId
 		reader   = hasher.NewMD5Reader(req.Reader)
-		hash     = req.HASH
 		partsize = req.PartSize
 	)
 
-	if !p.isUploadIdValid(uploadid) {
-		return nil, fmt.Errorf("invalid upload id")
+	if partsize > constants.BlockSize {
+		return nil, fmt.Errorf("invalid block size:%d", partsize)
 	}
+
+	blk, err := p.DecodeUploadId(uploadid)
+	if err != nil {
+		return nil, fmt.Errorf("decode upload id fail, err:%v", err)
+	}
+
 	lcked := p.c.lcker.Lock(uploadid)
 	if !lcked {
 		return nil, fmt.Errorf("other process locked")
 	}
 	defer p.c.lcker.Unlock(uploadid)
-	fc, err := p.readFromFile(uploadid)
-	if err != nil {
-		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
-	}
-	if req.BlockIndex < 0 || req.BlockIndex >= fc.BlockCount || req.BlockIndex > int64(len(fc.FileList)) {
-		return nil, fmt.Errorf("invalid block count")
-	}
-	if len(fc.FileList) != int(fc.BlockCount)-1 && req.PartSize > fc.BlockSize {
-		return nil, fmt.Errorf("invalid block size, should be:%d", fc.BlockSize)
-	}
-	//
-	var sum string
-	var fileid string
-	if req.PartSize < defaultMiniFileLength && req.BlockIndex == 0 {
-		data, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return nil, fmt.Errorf("read data fail, err:%v", err)
-		}
-		sum = reader.GetSum()
-		fc.ExtData = data
-	} else {
-		fileid, err = p.c.tgbot.Upload(ctx, partsize, reader)
-		if err != nil {
-			return nil, fmt.Errorf("upload fail, err:%v", err)
-		}
-		sum = reader.GetSum()
-	}
-	blockInfo := &tgblock.FilePart{
-		FileId: fileid,
-		Hash:   sum,
-	}
-	if int(req.BlockIndex) == len(fc.FileList) {
-		fc.FileList = append(fc.FileList, blockInfo)
-	} else {
-		fc.FileList[req.BlockIndex] = blockInfo
-	}
-	if len(hash) != 0 && sum != hash {
-		return nil, fmt.Errorf("checksum not match, should be:%s, get:%s", sum, hash)
-	}
 
-	if err := p.writeToFile(uploadid, fc); err != nil {
-		return nil, fmt.Errorf("write ctx to file fail")
+	fileid, err := p.c.tgbot.Upload(ctx, partsize, reader)
+	if err != nil {
+		return nil, fmt.Errorf("upload fail, err:%v", err)
 	}
+	if reader.GetSize() != int(partsize) {
+		return nil, fmt.Errorf("part size not match, get:%d", reader.GetSize())
+	}
+	sum := reader.GetSum()
+	tagid := p.BuildTagId(blk, fileid, sum, partsize)
 	return &PartFileUploadResponse{
-		Hash: sum,
+		Hash:      sum,
+		TagId:     tagid,
+		FileId:    fileid,
+		BlockSize: partsize,
 	}, nil
+}
+
+func (p *FileProcessor) checkFileBlockListValid(blk *tgblock.UploadIdContext, blocklist []FileBlock) error {
+	var fullSize int64
+	for idx, block := range blocklist {
+		tagid := p.BuildTagId(blk, block.FileId, block.Hash, block.BlockSize)
+		if tagid != block.TagId {
+			return fmt.Errorf("idx:%d, tagid:%d, blocktagid:%d not match", idx, tagid, block.TagId)
+		}
+		if block.BlockSize < constants.BlockSize && idx != len(blocklist)-1 {
+			return fmt.Errorf("part of block use invalid file size:%d", block.BlockSize)
+		}
+		fullSize += block.BlockSize
+	}
+	if fullSize != blk.FileSize {
+		return fmt.Errorf("file size not match, get:%d, request:%d", fullSize, blk.FileSize)
+	}
+	return nil
+}
+
+func (p *FileProcessor) buildBlockListHash(blocklist []FileBlock) string {
+	hasher := md5.New()
+	for _, block := range blocklist {
+		hasher.Write([]byte(block.Hash))
+	}
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func (p *FileProcessor) buildFileIdList(blocklist []FileBlock) []string {
+	rs := make([]string, 0, len(blocklist))
+	for _, block := range blocklist {
+		rs = append(rs, block.FileId)
+	}
+	return rs
 }
 
 func (p *FileProcessor) FinishFileUpload(ctx context.Context,
@@ -150,101 +172,75 @@ func (p *FileProcessor) FinishFileUpload(ctx context.Context,
 
 	var (
 		uploadid = req.UploadId
+		name     = req.FileName
 	)
-	if !p.isUploadIdValid(uploadid) {
-		return nil, fmt.Errorf("invalid upload id")
-	}
-	lcked := p.c.lcker.Lock(uploadid)
-	if !lcked {
-		return nil, fmt.Errorf("other process locked")
-	}
-	defer p.c.lcker.Unlock(uploadid)
-	fc, err := p.readFromFile(uploadid)
-	if err != nil {
-		return nil, fmt.Errorf("read ctx from file fail, err:%v", err)
-	}
-	if !fc.ForceZero && fc.FileSize == 0 {
-		return nil, fmt.Errorf("zero size file found")
-	}
-	fc.FinishTime = time.Now().Unix()
-	if len(fc.FileHash) == 0 && len(fc.FileList) == 1 {
-		fc.FileHash = fc.FileList[0].Hash
+	if len(name) > constants.MaxFileNameLen {
+		return nil, errs.NewAPIError(constants.ErrParams, fmt.Sprintf("file name too long, size:%d", len(name)))
 	}
 
-	if err := p.checkFileContextValid(fc); err != nil {
-		return nil, fmt.Errorf("check file ctx fail, err:%v", err)
+	blk, err := p.DecodeUploadId(uploadid)
+	if err != nil {
+		return nil, errs.WrapError(constants.ErrParams, "decode upload id fail", err)
 	}
+	if err := p.checkFileBlockListValid(blk, req.FileIdList); err != nil {
+		return nil, errs.WrapError(constants.ErrParams, "check block fail", err)
+	}
+
+	lcked := p.c.lcker.Lock(uploadid)
+	if !lcked {
+		return nil, errs.NewAPIError(constants.ErrLock, "other process locked")
+	}
+	defer p.c.lcker.Unlock(uploadid)
+
+	fc := &tgblock.FileContext{
+		Name:       req.FileName,
+		FileSize:   blk.FileSize,
+		FileHash:   p.buildBlockListHash(req.FileIdList),
+		CreateTime: 0,
+		FileIds:    p.buildFileIdList(req.FileIdList),
+	}
+
 	data := FileContextToBytes(fc)
 	fileid, err := p.c.tgbot.Upload(ctx, int64(len(data)), bytes.NewReader(data))
 	if err != nil {
-		return nil, fmt.Errorf("finish upload fail, err:%v", err)
+		return nil, errs.WrapError(constants.ErrIO, "finish upload fail", err)
 	}
-	_ = p.removeFile(uploadid)
 	return &FinishFileUploadResponse{
-		FileId:     fileid,
-		CreateTime: fc.CreateTime,
-		FinishTime: fc.FinishTime,
-		Size:       fc.FileSize,
-		Hash:       fc.FileHash,
-		BlockSize:  fc.BlockSize,
-		BlockCount: fc.BlockCount,
+		FileId: fileid,
+		Hash:   fc.FileHash,
 	}, nil
 }
 
-func (p *FileProcessor) checkFileContextValid(fc *tgblock.FileContext) error {
-	total := len(fc.FileList)
-	left := (total - 1) * int(fc.BlockSize)
-	right := total * int(fc.BlockSize)
-	if int(fc.FileSize) < left || int(fc.FileSize) > right {
-		return fmt.Errorf("invalid block num")
+func (p *FileProcessor) EncryptFileId(fileid string, ftype int32) (string, error) {
+	fidctx := &tgblock.FileIdContext{
+		FileType: ftype,
+		FileId:   fileid,
 	}
-	if len(fc.FileList) != int(fc.BlockCount) {
-		return fmt.Errorf("invalid block count")
-	}
-	return nil
-}
-
-func (p *FileProcessor) isUploadIdValid(file string) bool {
-	if len(file) == 0 {
-		return false
-	}
-	for _, c := range file {
-		if !(unicode.IsLetter(c) || unicode.IsDigit(c) || c == rune('-')) {
-			return false
-		}
-	}
-	return true
-}
-
-func (p *FileProcessor) readFromFile(uploadid string) (*tgblock.FileContext, error) {
-	file := p.buildSavePath(uploadid)
-	data, err := ioutil.ReadFile(file)
+	raw, err := proto.Marshal(fidctx)
 	if err != nil {
-		return nil, err
+		return "", errs.WrapError(constants.ErrUnknown, "encode pb fail, err:%v", err)
 	}
-	fc := &tgblock.FileContext{}
-	if err := FileContextFromBytes(fc, data); err != nil {
-		return nil, err
+	out, err := security.EncryptByKey32(p.c.seckey, raw)
+	if err != nil {
+		return "", errs.WrapError(constants.ErrUnknown, "encrypt fail", err)
 	}
-	return fc, nil
+	return base64.URLEncoding.EncodeToString(out), nil
 }
 
-func (p *FileProcessor) writeToFile(uploadid string, fc *tgblock.FileContext) error {
-	file := p.buildSavePath(uploadid)
-
-	if err := ioutil.WriteFile(file, FileContextToBytes(fc), 0644); err != nil {
-		return err
+func (p *FileProcessor) DecryptFileId(fileid string) (*tgblock.FileIdContext, error) {
+	raw, err := base64.URLEncoding.DecodeString(fileid)
+	if err != nil {
+		return nil, errs.WrapError(constants.ErrParams, "decode wrap fail", err)
 	}
-	return nil
-}
-
-func (p *FileProcessor) removeFile(uploadid string) error {
-	file := p.buildSavePath(uploadid)
-	return os.Remove(file)
-}
-
-func (p *FileProcessor) buildSavePath(uploadid string) string {
-	return p.c.tempdir + uploadid
+	out, err := security.DecryptByKey32(p.c.seckey, raw)
+	if err != nil {
+		return nil, errs.WrapError(constants.ErrParams, "decrypt fail", err)
+	}
+	fidctx := &tgblock.FileIdContext{}
+	if err := proto.Unmarshal(out, fidctx); err != nil {
+		return nil, errs.WrapError(constants.ErrParams, "final decode fail", err)
+	}
+	return nil, err
 }
 
 func (p *FileProcessor) CacheGetFileMeta(ctx context.Context, fileid string) (*tgblock.FileContext, error) {

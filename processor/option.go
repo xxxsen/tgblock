@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	tgbot   *bot.TGBotService
-	lcker   locker.Locker
-	fcache  cache.Cache
-	tempdir string
+	tgbot  *bot.TGBotService
+	lcker  locker.Locker
+	fcache cache.Cache
+	seckey string
 }
 
 type Option func(c *Config)
@@ -33,8 +33,8 @@ func WithCache(fc cache.Cache) Option {
 	}
 }
 
-func WithTempDir(s string) Option {
+func WithSecKey(key string) Option {
 	return func(c *Config) {
-		c.tempdir = s
+		c.seckey = key
 	}
 }

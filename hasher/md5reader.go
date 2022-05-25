@@ -12,6 +12,7 @@ import (
 type MD5Reader struct {
 	r      io.Reader
 	hasher hash.Hash
+	sz     int
 }
 
 func NewMD5Reader(r io.Reader) *MD5Reader {
@@ -22,6 +23,7 @@ func NewMD5Reader(r io.Reader) *MD5Reader {
 func (s *MD5Reader) Read(buf []byte) (int, error) {
 	sz, err := s.r.Read(buf)
 	if sz > 0 {
+		s.sz += sz
 		s.hasher.Write(buf[:sz])
 	}
 	return sz, err
@@ -29,6 +31,10 @@ func (s *MD5Reader) Read(buf []byte) (int, error) {
 
 func (s *MD5Reader) GetSum() string {
 	return hex.EncodeToString(s.hasher.Sum(nil))
+}
+
+func (s *MD5Reader) GetSize() int {
+	return s.sz
 }
 
 func CalcMD5(file string) (string, error) {
